@@ -1,12 +1,12 @@
 ﻿"""Tests for the EngineRouter."""
 
 import os
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import AsyncMock, patch
 
 from docfold.engines.base import DocumentEngine, EngineResult, OutputFormat
 from docfold.engines.router import EngineRouter
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -120,9 +120,100 @@ class TestCompare:
         assert len(results) == 2
 
 
+class TestExtensionPriority:
+    """Test that the router picks the right engine based on file extension."""
+
+    def test_docx_picks_docling_over_mineru(self):
+        """MinerU is PDF-only; .docx should skip it."""
+        r = EngineRouter([
+            FakeEngine("mineru", {"pdf"}, available=True),
+            FakeEngine("docling", {"pdf", "docx"}, available=True),
+        ])
+        engine = r.select("report.docx")
+        assert engine.name == "docling"
+
+    def test_png_prefers_paddleocr(self):
+        """Image files should prefer OCR engines."""
+        r = EngineRouter([
+            FakeEngine("docling", {"pdf", "png"}, available=True),
+            FakeEngine("paddleocr", {"png", "jpg", "pdf"}, available=True),
+        ])
+        engine = r.select("scan.png")
+        assert engine.name == "paddleocr"
+
+    def test_pdf_prefers_docling(self):
+        """PDFs should prefer docling (first in PDF priority)."""
+        r = EngineRouter([
+            FakeEngine("paddleocr", {"png", "pdf"}, available=True),
+            FakeEngine("docling", {"pdf", "docx"}, available=True),
+        ])
+        engine = r.select("document.pdf")
+        assert engine.name == "docling"
+
+
+class TestAllowedEngines:
+    """Test that allowed_engines restricts engine selection."""
+
+    def test_restricts_to_allowed(self):
+        r = EngineRouter(
+            engines=[
+                FakeEngine("docling", {"pdf"}, available=True),
+                FakeEngine("pymupdf", {"pdf"}, available=True),
+            ],
+            allowed_engines={"pymupdf"},
+        )
+        engine = r.select("test.pdf")
+        assert engine.name == "pymupdf"
+
+    def test_no_match_in_allowed(self):
+        r = EngineRouter(
+            engines=[
+                FakeEngine("docling", {"pdf"}, available=True),
+            ],
+            allowed_engines={"pymupdf"},
+        )
+        with pytest.raises(ValueError, match="No available engine"):
+            r.select("test.pdf")
+
+
+class TestFallbackOrder:
+    """Test that user-provided fallback_order overrides default priority."""
+
+    def test_custom_order(self):
+        r = EngineRouter(
+            engines=[
+                FakeEngine("docling", {"pdf"}, available=True),
+                FakeEngine("pymupdf", {"pdf"}, available=True),
+            ],
+            fallback_order=["pymupdf", "docling"],
+        )
+        engine = r.select("test.pdf")
+        assert engine.name == "pymupdf"
+
+    def test_custom_order_skips_unavailable(self):
+        r = EngineRouter(
+            engines=[
+                FakeEngine("first", {"pdf"}, available=False),
+                FakeEngine("second", {"pdf"}, available=True),
+            ],
+            fallback_order=["first", "second"],
+        )
+        engine = r.select("test.pdf")
+        assert engine.name == "second"
+
+
 class TestListEngines:
     def test_list(self, router):
         engines = router.list_engines()
         assert len(engines) == 4
         names = {e["name"] for e in engines}
         assert names == {"docling", "mineru", "marker", "pymupdf"}
+
+    def test_list_includes_capabilities(self, router):
+        engines = router.list_engines()
+        for e in engines:
+            assert "capabilities" in e
+            caps = e["capabilities"]
+            assert "bounding_boxes" in caps
+            assert "confidence" in caps
+            assert "table_structure" in caps

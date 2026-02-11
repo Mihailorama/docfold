@@ -1,6 +1,7 @@
 ﻿"""Tests for the base engine interface and EngineResult dataclass."""
 
 import pytest
+
 from docfold.engines.base import DocumentEngine, EngineResult, OutputFormat
 
 

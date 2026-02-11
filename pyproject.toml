@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "docfold"
-version = "0.1.0"
+version = "0.3.0"
 description = "Turn any document into structured data. Unified interface for document structuring engines with built-in evaluation."
 readme = "README.md"
 license = "MIT"
@@ -48,13 +48,38 @@ marker = [
 pymupdf = [
     "PyMuPDF>=1.23",
 ]
-ocr = [
+paddleocr = [
     "paddleocr>=2.7",
     "paddlepaddle>=2.5",
-    "pytesseract>=0.3.10",
     "opencv-python>=4.7",
     "Pillow>=10.0",
     "pdf2image>=1.16",
+]
+tesseract = [
+    "pytesseract>=0.3.10",
+    "Pillow>=10.0",
+    "pdf2image>=1.16",
+]
+unstructured = [
+    "unstructured[all-docs]>=0.16",
+]
+llamaparse = [
+    "llama-parse>=0.5",
+]
+mistral-ocr = [
+    "mistralai>=1.0",
+]
+zerox = [
+    "py-zerox>=0.1",
+]
+textract = [
+    "boto3>=1.28",
+]
+google-docai = [
+    "google-cloud-documentai>=3.0",
+]
+azure-docint = [
+    "azure-ai-documentintelligence>=1.0",
 ]
 evaluation = [
     "jiwer>=3.0",          # WER/CER computation
@@ -64,7 +89,7 @@ evaluation = [
     "psutil>=5.9",         # Memory measurement
 ]
 all = [
-    "docfold[docling,mineru,marker,pymupdf,ocr,evaluation]",
+    "docfold[docling,mineru,marker,pymupdf,paddleocr,tesseract,unstructured,llamaparse,mistral-ocr,zerox,textract,google-docai,azure-docint,evaluation]",
 ]
 dev = [
     "docfold[all]",

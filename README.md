@@ -4,15 +4,56 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![CI](https://github.com/mihailorama/docfold/actions/workflows/ci.yml/badge.svg)](https://github.com/mihailorama/docfold/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-107%20passed-brightgreen.svg)](#)
+[![Tests](https://img.shields.io/badge/tests-163%20passed-brightgreen.svg)](#)
 
-**Turn any document into structured data.**
+**Turn any document into structured data.** Unified Python toolkit for document structuring — one interface, 13 engines, built-in benchmarks.
 
-Docfold is a unified Python toolkit for document structuring. It wraps multiple open-source and commercial extraction engines behind a single interface, so you can convert PDFs, images, Office documents, and more into clean Markdown, HTML, or JSON — and objectively compare which engine works best for your documents.
+## Engine Comparison
+
+> Research-based estimates from public benchmarks, documentation, and community reports. See [detailed methodology](docs/benchmarks.md). Run your own: `docfold compare your_doc.pdf`
+
+| Engine | docfold | Type | License | Text PDF | Scan/OCR | Tables | BBox | Conf | Speed | Cost |
+|--------|:-------:|------|---------|:--------:|:--------:|:------:|:----:|:----:|-------|------|
+| [**Docling**](https://github.com/docling-project/docling) | ✅ | Local | MIT | ★★★ | ★★☆ | ★★★ | ✅ | — | Medium | Free |
+| [**MinerU**](https://github.com/opendatalab/MinerU) | ✅ | Local | AGPL | ★★★ | ★★★ | ★★★ | — | — | Slow | Free |
+| [**Marker**](https://www.datalab.to/) | ✅ | SaaS | Paid | ★★★ | ★★★ | ★★★ | ✅ | — | Fast | $$ |
+| [**PyMuPDF**](https://pymupdf.readthedocs.io/) | ✅ | Local | AGPL | ★★★ | ☆☆☆ | ★☆☆ | — | — | Ultra | Free |
+| [**PaddleOCR**](https://github.com/PaddlePaddle/PaddleOCR) | ✅ | Local | Apache | ★☆☆ | ★★★ | ★★☆ | — | ✅ | Medium | Free |
+| [**Tesseract**](https://github.com/tesseract-ocr/tesseract) | ✅ | Local | Apache | ★☆☆ | ★★☆ | ★☆☆ | — | — | Medium | Free |
+| [**Unstructured**](https://github.com/Unstructured-IO/unstructured) | ✅ | Local | Apache | ★★☆ | ★★☆ | ★★☆ | — | — | Medium | Free |
+| [**LlamaParse**](https://docs.llamaindex.ai/en/stable/llama_cloud/llama_parse/) | ✅ | SaaS | Paid | ★★★ | ★★★ | ★★★ | — | — | Fast | $$ |
+| [**Mistral OCR**](https://docs.mistral.ai/capabilities/document/) | ✅ | SaaS | Paid | ★★★ | ★★★ | ★★★ | — | — | Fast | $$ |
+| [**Zerox**](https://github.com/getomni-ai/zerox) | ✅ | VLM | MIT | ★★★ | ★★★ | ★★☆ | — | — | Slow | $$$ |
+| [**AWS Textract**](https://aws.amazon.com/textract/) | ✅ | SaaS | Paid | ★★★ | ★★★ | ★★★ | ✅ | ✅ | Fast | $$ |
+| [**Google Doc AI**](https://cloud.google.com/document-ai) | ✅ | SaaS | Paid | ★★★ | ★★★ | ★★★ | ✅ | ✅ | Fast | $$ |
+| [**Azure Doc Intel**](https://azure.microsoft.com/en-us/products/ai-services/ai-document-intelligence) | ✅ | SaaS | Paid | ★★★ | ★★★ | ★★★ | ✅ | ✅ | Fast | $$ |
+| [Nougat](https://github.com/facebookresearch/nougat) | — | Local | MIT | ★★★ | ★★☆ | ★★☆ | — | — | Slow | Free |
+| [GOT-OCR 2.0](https://github.com/Ucas-HaoranWei/GOT-OCR2.0) | — | Local | Apache | ★★☆ | ★★★ | ★★☆ | — | — | Slow | Free |
+| [Surya](https://github.com/VikParuchuri/surya) | — | Local | GPL | ★★☆ | ★★★ | ★★☆ | — | — | Medium | Free |
+
+**★★★** Excellent **★★☆** Good **★☆☆** Basic **☆☆☆** Not supported — **$$** ~$1-3/1K pages **$$$** ~$5-15/1K pages — **BBox** Bounding boxes — **Conf** Confidence scores
+
+> [Full engine profiles, format matrix, hardware requirements, and cost breakdown →](docs/benchmarks.md)
+
+## How to Choose
+
+| Your situation | Recommended engine |
+|---|---|
+| Digital PDF, speed is critical | **PyMuPDF** — zero deps, ~1000 pages/sec |
+| Scanned documents, need OCR | **PaddleOCR** (80+ langs) or **Tesseract** (100+ langs) |
+| Complex layouts + tables | **Docling** or **MinerU** (free), **LlamaParse** (paid) |
+| Academic papers + math formulas | **MinerU** or **Nougat** (free), **Mistral OCR** (paid) |
+| Best quality, budget available | **Mistral OCR** or **LlamaParse** |
+| Use any Vision LLM (GPT-4o, Claude, etc.) | **Zerox** — model-agnostic |
+| Self-hosted, all-in-one ETL | **Unstructured** with hi_res strategy |
+| Diverse file types (not just PDF) | **Docling** or **Unstructured** |
+| Need bounding boxes + confidence | **Textract**, **Google DocAI**, or **Azure DocInt** |
+| Office files (DOCX/PPTX/XLSX) | **Docling**, **Marker**, **Unstructured**, or **Azure DocInt** |
+| AWS/GCP/Azure native pipeline | **Textract** / **Google DocAI** / **Azure DocInt** |
 
 ## Why Docfold?
 
-Every document processing engine has trade-offs:
+Every engine has trade-offs. Docfold lets you switch between them with one line:
 
 | Challenge | Without Docfold | With Docfold |
 |-----------|----------------|--------------|
@@ -35,9 +76,6 @@ print(result.content)       # Markdown output
 print(result.engine_name)   # Which engine was used
 print(result.processing_time_ms)
 
-# Or pick a specific engine
-result = await router.process("invoice.pdf", engine_hint="pymupdf")
-
 # Compare all engines on the same document
 results = await router.compare("invoice.pdf")
 for name, res in results.items():
@@ -52,7 +90,15 @@ for name, res in results.items():
 | [**MinerU**](https://github.com/opendatalab/MinerU) | Local | AGPL-3.0 | PDF | Recommended | `pip install docfold[mineru]` |
 | [**Marker API**](https://www.datalab.to/) | SaaS | Paid | PDF, Office, images | N/A | `pip install docfold[marker]` |
 | [**PyMuPDF**](https://pymupdf.readthedocs.io/) | Local | AGPL-3.0 | PDF | No | `pip install docfold[pymupdf]` |
-| [**PaddleOCR**](https://github.com/PaddlePaddle/PaddleOCR) | Local | Apache-2.0 | Images, scanned PDFs | Optional | `pip install docfold[ocr]` |
+| [**PaddleOCR**](https://github.com/PaddlePaddle/PaddleOCR) | Local | Apache-2.0 | Images, scanned PDFs | Optional | `pip install docfold[paddleocr]` |
+| [**Tesseract**](https://github.com/tesseract-ocr/tesseract) | Local | Apache-2.0 | Images, scanned PDFs | No | `pip install docfold[tesseract]` |
+| [**Unstructured**](https://github.com/Unstructured-IO/unstructured) | Local | Apache-2.0 | PDF, Office, HTML, email, ePub | Optional | `pip install docfold[unstructured]` |
+| [**LlamaParse**](https://docs.llamaindex.ai/en/stable/llama_cloud/llama_parse/) | SaaS | Paid | PDF, Office, images | N/A | `pip install docfold[llamaparse]` |
+| [**Mistral OCR**](https://docs.mistral.ai/capabilities/document/) | SaaS | Paid | PDF, images | N/A | `pip install docfold[mistral-ocr]` |
+| [**Zerox**](https://github.com/getomni-ai/zerox) | VLM | MIT | PDF, images | Depends | `pip install docfold[zerox]` |
+| [**AWS Textract**](https://aws.amazon.com/textract/) | SaaS | Paid | PDF, images | N/A | `pip install docfold[textract]` |
+| [**Google Doc AI**](https://cloud.google.com/document-ai) | SaaS | Paid | PDF, images | N/A | `pip install docfold[google-docai]` |
+| [**Azure Doc Intel**](https://azure.microsoft.com/en-us/products/ai-services/ai-document-intelligence) | SaaS | Paid | PDF, Office, HTML, images | N/A | `pip install docfold[azure-docint]` |
 
 > **Adding your own engine?** Implement the `DocumentEngine` interface — see [Adding a Custom Engine](#adding-a-custom-engine) below.
 
@@ -64,7 +110,7 @@ pip install docfold
 
 # With specific engines
 pip install docfold[docling]
-pip install docfold[docling,pymupdf]
+pip install docfold[docling,pymupdf,tesseract]
 
 # Everything
 pip install docfold[all]
@@ -178,16 +224,27 @@ See [docs/evaluation.md](docs/evaluation.md) for the ground truth JSON schema an
                         │  process_batch() / compare() │
                         └──────────┬──────────────────┘
                                    │
-              ┌────────────┬───────┴───────┬─────────────┐
-              ▼            ▼               ▼             ▼
-        ┌──────────┐ ┌──────────┐  ┌────────────┐ ┌──────────┐
-        │ Docling  │ │ PyMuPDF  │  │ Marker API │ │   OCR    │
-        │ (local)  │ │ (local)  │  │  (remote)  │ │ (local)  │
-        └──────────┘ └──────────┘  └────────────┘ └──────────┘
-              │            │               │             │
-              └────────────┴───────┬───────┘─────────────┘
-                                   ▼
-                          ┌────────────────┐
+     ┌──────────┬───────┬──────────┴──────┬──────────┬──────────┐
+     ▼          ▼       ▼                 ▼          ▼          ▼
+┌────────┐ ┌────────┐ ┌──────────┐  ┌────────┐ ┌────────┐ ┌──────┐
+│Docling │ │ MinerU │ │Unstructd │  │ Marker │ │PyMuPDF │ │ OCR  │
+│(local) │ │(local) │ │ (local)  │  │ (SaaS) │ │(local) │ │Paddle│
+└────────┘ └────────┘ └──────────┘  └────────┘ └────────┘ │Tess. │
+     │          │           │            │          │      └──────┘
+     │     ┌────────┐ ┌──────────┐ ┌────────┐      │          │
+     │     │Llama   │ │ Mistral  │ │ Zerox  │      │          │
+     │     │Parse   │ │  OCR     │ │ (VLM)  │      │          │
+     │     │(SaaS)  │ │ (SaaS)  │ │        │      │          │
+     │     └────────┘ └──────────┘ └────────┘      │          │
+     │          │           │            │          │          │
+     │     ┌────────┐ ┌──────────┐ ┌────────┐      │          │
+     │     │Textract│ │Google    │ │ Azure  │      │          │
+     │     │ (AWS)  │ │DocAI     │ │DocInt  │      │          │
+     │     │        │ │ (GCP)    │ │        │      │          │
+     │     └────────┘ └──────────┘ └────────┘      │          │
+     └──────────┴───────┴─────────────┴─────────────┴──────────┘
+                                   │
+                          ┌────────▼───────┐
                           │  EngineResult  │
                           │  (unified)     │
                           └────────────────┘
@@ -199,8 +256,19 @@ When no engine is explicitly specified, the router selects one automatically:
 
 1. **Explicit hint** — `engine_hint="docling"` in the call
 2. **Environment default** — `ENGINE_DEFAULT=docling` env var
-3. **Fallback chain** — `docling > mineru > marker > pymupdf > ocr`
-4. **Extension compatibility** — Filters to engines that support the file type
+3. **Extension-aware priority** — each file type has its own engine priority chain (e.g., `.png` prefers PaddleOCR, `.pdf` prefers Docling, `.docx` skips PDF-only engines)
+4. **User-configurable** — override with `fallback_order` or restrict with `allowed_engines`
+
+```python
+# Restrict to specific engines
+router = EngineRouter(engines, allowed_engines={"docling", "pymupdf"})
+
+# Custom fallback order
+router = EngineRouter(engines, fallback_order=["pymupdf", "docling", "marker"])
+
+# CLI: --engines flag
+# docfold convert invoice.pdf --engines docling,pymupdf
+```
 
 ## Adding a Custom Engine
 
@@ -248,12 +316,15 @@ Docfold builds on and integrates with these excellent projects:
 | [MinerU / PDF-Extract-Kit](https://github.com/opendatalab/MinerU) | End-to-end PDF structuring with layout analysis and formula recognition |
 | [Marker](https://github.com/VikParuchuri/marker) | High-quality PDF to Markdown converter |
 | [PyMuPDF](https://github.com/pymupdf/PyMuPDF) | Fast PDF/XPS/EPUB processing library |
-| [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) | Multilingual OCR toolkit |
-| [Tesseract](https://github.com/tesseract-ocr/tesseract) | Open-source OCR engine |
+| [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) | Multilingual OCR toolkit (80+ languages) |
+| [Tesseract](https://github.com/tesseract-ocr/tesseract) | Open-source OCR engine (100+ languages) |
 | [Unstructured](https://github.com/Unstructured-IO/unstructured) | ETL toolkit for diverse document types |
 | [LlamaParse](https://docs.llamaindex.ai/en/stable/llama_cloud/llama_parse/) | LLM-powered document parsing |
-| [Nougat](https://github.com/facebookresearch/nougat) | Meta's academic PDF → Markdown model |
-| [GOT-OCR](https://github.com/Ucas-HaoranWei/GOT-OCR2.0) | General OCR Theory — end-to-end OCR with transformers |
+| [Mistral OCR](https://docs.mistral.ai/capabilities/document/) | Vision LLM document understanding |
+| [Zerox](https://github.com/getomni-ai/zerox) | Model-agnostic Vision LLM OCR |
+| [Nougat](https://github.com/facebookresearch/nougat) | Meta's academic PDF to Markdown model |
+| [GOT-OCR](https://github.com/Ucas-HaoranWei/GOT-OCR2.0) | General OCR Theory — end-to-end transformer OCR |
+| [Surya](https://github.com/VikParuchuri/surya) | Multilingual OCR + layout analysis |
 
 ### Built by
 
@@ -262,24 +333,6 @@ Docfold builds on and integrates with these excellent projects:
 | [Datatera.ai](https://datatera.ai) | AI-powered data transformation and document processing platform |
 | [Orquesta AI](https://orquestaai.com) | AI orchestration and agent management platform |
 | [AI Agent Labs](https://aiagentlbs.com) | AI agent services and location-based intelligence |
-
-## Benchmarks
-
-> Benchmarks are a work in progress. We're building a ground truth dataset across document categories (invoices, academic papers, contracts, forms). Contributions welcome!
-
-Once available, benchmarks will cover:
-
-- **Accuracy**: CER, WER, Table F1, Heading F1 per engine per category
-- **Speed**: Pages/second, latency P50/P95
-- **Resource usage**: Memory, CPU, GPU utilization
-- **Format support**: Which engines handle which formats successfully
-
-To run your own benchmarks:
-
-```bash
-pip install docfold[all,evaluation]
-docfold evaluate your_dataset/ --output benchmark.json
-```
 
 ## Development
 
@@ -302,4 +355,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 MIT. See [LICENSE](LICENSE).
 
-> **Note:** Some engine backends have their own licenses (AGPL-3.0 for PyMuPDF and MinerU, SaaS terms for Marker API). Docfold itself is MIT — the engine adapters are optional extras that you install separately.
+> **Note:** Some engine backends have their own licenses (AGPL-3.0 for PyMuPDF and MinerU, GPL-3.0 for Surya, SaaS terms for Marker/LlamaParse/Mistral). Docfold itself is MIT — the engine adapters are optional extras that you install separately.

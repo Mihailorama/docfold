@@ -1,12 +1,12 @@
 """Tests for the evaluation runner."""
 
 import json
-import os
-import tempfile
+
 import pytest
+
 from docfold.engines.base import DocumentEngine, EngineResult, OutputFormat
 from docfold.engines.router import EngineRouter
-from docfold.evaluation.runner import EvaluationRunner, EvaluationReport, DocumentScore
+from docfold.evaluation.runner import DocumentScore, EvaluationReport, EvaluationRunner
 
 
 class StubEngine(DocumentEngine):

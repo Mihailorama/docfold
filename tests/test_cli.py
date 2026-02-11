@@ -1,8 +1,9 @@
 """Tests for the CLI module."""
 
+
 import pytest
-from unittest.mock import patch, AsyncMock
-from docfold.cli import main, _build_router
+
+from docfold.cli import _build_router, main
 
 
 class TestBuildRouter:

@@ -5,6 +5,52 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-02-11
+
+### Added
+
+- **3 cloud engine adapters** (total: 13 engines):
+  - AWS Textract — enterprise form/table extraction with bounding boxes and confidence scores
+  - Google Document AI — GCP-native processing with specialized processors
+  - Azure Document Intelligence — widest cloud format support (PDF, images, DOCX, XLSX, PPTX, HTML)
+- **`EngineCapabilities` declaration** — each engine declares what enrichments it can populate (bounding boxes, confidence, images, table structure, heading detection, reading order)
+- **Extension-aware smart router** — engine selection now uses per-extension priority chains (e.g., `.png` prefers PaddleOCR, `.docx` skips PDF-only engines)
+- **User-configurable routing** — `fallback_order` and `allowed_engines` parameters on `EngineRouter`
+- **`--engines` CLI flag** — restrict engine selection via `docfold convert file.pdf --engines docling,pymupdf`
+- **Feature Coverage Matrix** in `docs/benchmarks.md` — per-engine capability comparison
+- Capabilities columns (BBox, Conf, Tbl, Img) in `docfold engines` CLI output
+
+### Changed
+
+- Router `select()` uses extension-based priority map instead of static fallback chain
+- README comparison table now includes BBox and Conf columns
+- `docfold engines` output includes capability indicators
+
+## [0.2.0] - 2026-02-11
+
+### Added
+
+- **6 new engine adapters** (total: 10 engines):
+  - PaddleOCR — standalone multilingual OCR (80+ languages)
+  - Tesseract — standalone open-source OCR (100+ languages)
+  - Unstructured — all-in-one document ETL (PDF, Office, email, HTML, ePub)
+  - LlamaParse — LLM-powered cloud parsing (LlamaIndex)
+  - Mistral OCR — Vision LLM document understanding (Mistral AI)
+  - Zerox — model-agnostic Vision LLM OCR (GPT-4o, Claude, Gemini, DeepSeek VL)
+- **Engine comparison benchmark** — research-based comparison of 16 document processing engines covering text PDF quality, OCR, tables, formulas, multilingual support, speed, and cost
+- **"How to Choose" guide** — decision table for quick engine selection
+- **Detailed benchmarks doc** (`docs/benchmarks.md`) — per-engine profiles, format support matrix, hardware requirements, cost breakdown
+
+### Changed
+
+- Split monolithic OCR engine into separate **PaddleOCR** and **Tesseract** adapters
+- Updated fallback chain to include all 10 engines
+- README restructured — benchmark table and decision guide now at the top
+
+### Removed
+
+- `ocr_engine.py` — replaced by `paddleocr_engine.py` and `tesseract_engine.py`
+
 ## [0.1.0] - 2026-02-10
 
 ### Added

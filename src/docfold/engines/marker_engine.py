@@ -13,7 +13,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from docfold.engines.base import DocumentEngine, EngineResult, OutputFormat
+from docfold.engines.base import DocumentEngine, EngineCapabilities, EngineResult, OutputFormat
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +51,13 @@ class MarkerEngine(DocumentEngine):
     @property
     def supported_extensions(self) -> set[str]:
         return _SUPPORTED_EXTENSIONS
+
+    @property
+    def capabilities(self) -> EngineCapabilities:
+        return EngineCapabilities(
+            bounding_boxes=True, images=True, table_structure=True,
+            heading_detection=True,
+        )
 
     def is_available(self) -> bool:
         try:

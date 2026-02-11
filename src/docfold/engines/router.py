@@ -6,16 +6,76 @@ import asyncio
 import logging
 import os
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Protocol
+from typing import Any, Protocol
 
 from docfold.engines.base import DocumentEngine, EngineResult, OutputFormat
 
 logger = logging.getLogger(__name__)
 
-# Fallback preference order when no hint is given and no default is set.
-_DEFAULT_FALLBACK_ORDER = ["docling", "mineru", "marker", "pymupdf", "ocr"]
+# ---------------------------------------------------------------------------
+# Extension-aware priority map
+# ---------------------------------------------------------------------------
+# Each file extension maps to an ordered list of engine names that are
+# most appropriate for that format.  The router walks this list and picks
+# the first *available* engine that supports the extension.
+
+_IMAGE_PRIORITY = [
+    "paddleocr", "tesseract", "docling", "mistral_ocr",
+    "google_docai", "textract", "azure_docint", "zerox", "marker",
+]
+
+_EXTENSION_PRIORITY: dict[str, list[str]] = {
+    # --- PDF ---
+    "pdf": [
+        "docling", "mineru", "unstructured", "marker",
+        "llamaparse", "mistral_ocr", "google_docai", "azure_docint", "textract",
+        "zerox", "pymupdf", "paddleocr", "tesseract",
+    ],
+    # --- Office ---
+    "docx": ["docling", "marker", "unstructured", "llamaparse", "azure_docint"],
+    "doc":  ["docling", "marker", "unstructured", "llamaparse", "azure_docint"],
+    "pptx": ["docling", "marker", "unstructured", "llamaparse", "azure_docint"],
+    "ppt":  ["docling", "marker", "unstructured", "llamaparse", "azure_docint"],
+    "xlsx": ["docling", "marker", "unstructured", "llamaparse", "azure_docint"],
+    "xls":  ["docling", "marker", "unstructured", "llamaparse", "azure_docint"],
+    "odt":  ["marker", "unstructured"],
+    "odp":  ["marker", "unstructured"],
+    "ods":  ["marker", "unstructured"],
+    # --- Web / markup ---
+    "html": ["docling", "unstructured", "marker", "azure_docint"],
+    "htm":  ["docling", "unstructured", "marker", "azure_docint"],
+    "xml":  ["unstructured"],
+    "md":   ["unstructured"],
+    "rst":  ["unstructured"],
+    "csv":  ["unstructured"],
+    "tsv":  ["unstructured"],
+    "txt":  ["unstructured"],
+    "rtf":  ["unstructured"],
+    # --- Images ---
+    "png":  _IMAGE_PRIORITY,
+    "jpg":  _IMAGE_PRIORITY,
+    "jpeg": _IMAGE_PRIORITY,
+    "tiff": _IMAGE_PRIORITY,
+    "tif":  _IMAGE_PRIORITY,
+    "bmp":  _IMAGE_PRIORITY,
+    "webp": _IMAGE_PRIORITY,
+    "gif":  ["google_docai"],
+    # --- Email ---
+    "eml":  ["unstructured"],
+    "msg":  ["unstructured"],
+    # --- eBooks ---
+    "epub": ["unstructured", "marker"],
+}
+
+# Ultimate fallback when extension is unknown or missing from the map.
+_DEFAULT_FALLBACK = [
+    "docling", "mineru", "unstructured", "marker",
+    "llamaparse", "mistral_ocr", "google_docai", "azure_docint", "textract",
+    "zerox", "pymupdf", "paddleocr", "tesseract",
+]
 
 
 # ------------------------------------------------------------------
@@ -69,13 +129,20 @@ class EngineRouter:
     appropriate one for each request based on:
 
     1. Explicit ``engine`` hint from the caller.
-    2. File extension compatibility.
-    3. ``ENGINE_DEFAULT`` environment variable.
-    4. Built-in fallback chain.
+    2. ``ENGINE_DEFAULT`` environment variable.
+    3. Extension-aware priority chain (or user-provided ``fallback_order``).
+    4. ``allowed_engines`` filter (if set).
     """
 
-    def __init__(self, engines: list[DocumentEngine] | None = None) -> None:
+    def __init__(
+        self,
+        engines: list[DocumentEngine] | None = None,
+        fallback_order: list[str] | None = None,
+        allowed_engines: set[str] | None = None,
+    ) -> None:
         self._engines: dict[str, DocumentEngine] = {}
+        self._fallback_order = fallback_order
+        self._allowed_engines = allowed_engines
         for engine in engines or []:
             self.register(engine)
 
@@ -94,6 +161,22 @@ class EngineRouter:
     # ------------------------------------------------------------------
     # Selection
     # ------------------------------------------------------------------
+
+    def _get_priority(self, ext: str) -> list[str]:
+        """Return the engine priority list for *ext*."""
+        if self._fallback_order is not None:
+            return self._fallback_order
+        return _EXTENSION_PRIORITY.get(ext, _DEFAULT_FALLBACK)
+
+    def _is_candidate(self, engine: DocumentEngine, ext: str) -> bool:
+        """Check if *engine* is available and passes the allowed filter."""
+        if not engine.is_available():
+            return False
+        if self._allowed_engines and engine.name not in self._allowed_engines:
+            return False
+        if ext and ext not in engine.supported_extensions:
+            return False
+        return True
 
     def select(
         self,
@@ -129,18 +212,18 @@ class EngineRouter:
         env_default = os.getenv("ENGINE_DEFAULT")
         if env_default:
             engine = self._engines.get(env_default)
-            if engine and engine.is_available() and (not ext or ext in engine.supported_extensions):
+            if engine and self._is_candidate(engine, ext):
                 return engine
 
-        # 3. Fallback chain
-        for name in _DEFAULT_FALLBACK_ORDER:
+        # 3. Extension-aware priority chain
+        for name in self._get_priority(ext):
             engine = self._engines.get(name)
-            if engine and engine.is_available() and (not ext or ext in engine.supported_extensions):
+            if engine and self._is_candidate(engine, ext):
                 return engine
 
         # 4. Any available engine that supports the extension
         for engine in self._engines.values():
-            if engine.is_available() and (not ext or ext in engine.supported_extensions):
+            if self._is_candidate(engine, ext):
                 return engine
 
         raise ValueError(
@@ -313,6 +396,14 @@ class EngineRouter:
                 "name": e.name,
                 "available": e.is_available(),
                 "extensions": sorted(e.supported_extensions),
+                "capabilities": {
+                    "bounding_boxes": e.capabilities.bounding_boxes,
+                    "confidence": e.capabilities.confidence,
+                    "images": e.capabilities.images,
+                    "table_structure": e.capabilities.table_structure,
+                    "heading_detection": e.capabilities.heading_detection,
+                    "reading_order": e.capabilities.reading_order,
+                },
             }
             for e in self._engines.values()
         ]

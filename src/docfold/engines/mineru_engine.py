@@ -12,7 +12,7 @@ import logging
 import time
 from typing import Any
 
-from docfold.engines.base import DocumentEngine, EngineResult, OutputFormat
+from docfold.engines.base import DocumentEngine, EngineCapabilities, EngineResult, OutputFormat
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +37,12 @@ class MinerUEngine(DocumentEngine):
     @property
     def supported_extensions(self) -> set[str]:
         return _SUPPORTED_EXTENSIONS
+
+    @property
+    def capabilities(self) -> EngineCapabilities:
+        return EngineCapabilities(
+            table_structure=True, heading_detection=True, reading_order=True,
+        )
 
     def is_available(self) -> bool:
         try:

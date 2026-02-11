@@ -1,6 +1,7 @@
 """Tests for batch processing and progress callbacks."""
 
 import pytest
+
 from docfold.engines.base import DocumentEngine, EngineResult, OutputFormat
 from docfold.engines.router import BatchResult, EngineRouter
 

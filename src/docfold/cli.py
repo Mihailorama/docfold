@@ -19,7 +19,7 @@ def main(argv: list[str] | None = None) -> None:
     convert_p.add_argument("file", help="Path to the input document")
     convert_p.add_argument(
         "-e", "--engine",
-        help="Engine to use (docling, mineru, marker, pymupdf, ocr). Default: auto-select.",
+        help="Engine to use. Default: auto-select.",
     )
     convert_p.add_argument(
         "-f", "--format",
@@ -30,6 +30,10 @@ def main(argv: list[str] | None = None) -> None:
     convert_p.add_argument(
         "-o", "--output",
         help="Output file path. If omitted, prints to stdout.",
+    )
+    convert_p.add_argument(
+        "--engines",
+        help="Comma-separated list of allowed engines (restricts selection).",
     )
 
     # --- engines ---
@@ -103,8 +107,56 @@ def _build_router():
         pass
 
     try:
-        from docfold.engines.ocr_engine import OCREngine
-        router.register(OCREngine())
+        from docfold.engines.paddleocr_engine import PaddleOCREngine
+        router.register(PaddleOCREngine())
+    except Exception:
+        pass
+
+    try:
+        from docfold.engines.tesseract_engine import TesseractEngine
+        router.register(TesseractEngine())
+    except Exception:
+        pass
+
+    try:
+        from docfold.engines.unstructured_engine import UnstructuredEngine
+        router.register(UnstructuredEngine())
+    except Exception:
+        pass
+
+    try:
+        from docfold.engines.llamaparse_engine import LlamaParseEngine
+        router.register(LlamaParseEngine())
+    except Exception:
+        pass
+
+    try:
+        from docfold.engines.mistral_ocr_engine import MistralOCREngine
+        router.register(MistralOCREngine())
+    except Exception:
+        pass
+
+    try:
+        from docfold.engines.zerox_engine import ZeroxEngine
+        router.register(ZeroxEngine())
+    except Exception:
+        pass
+
+    try:
+        from docfold.engines.textract_engine import TextractEngine
+        router.register(TextractEngine())
+    except Exception:
+        pass
+
+    try:
+        from docfold.engines.google_docai_engine import GoogleDocAIEngine
+        router.register(GoogleDocAIEngine())
+    except Exception:
+        pass
+
+    try:
+        from docfold.engines.azure_docint_engine import AzureDocIntEngine
+        router.register(AzureDocIntEngine())
     except Exception:
         pass
 
@@ -114,7 +166,10 @@ def _build_router():
 async def _cmd_convert(args) -> None:
     from docfold.engines.base import OutputFormat
 
+    allowed = set(args.engines.split(",")) if args.engines else None
     router = _build_router()
+    if allowed:
+        router._allowed_engines = allowed
     fmt = OutputFormat(args.format)
 
     result = await router.process(args.file, output_format=fmt, engine_hint=args.engine)
@@ -123,7 +178,9 @@ async def _cmd_convert(args) -> None:
     if args.output:
         with open(args.output, "w", encoding="utf-8") as f:
             f.write(output)
-        print(f"Written to {args.output} (engine={result.engine_name}, {result.processing_time_ms}ms)")
+        eng = result.engine_name
+        ms = result.processing_time_ms
+        print(f"Written to {args.output} (engine={eng}, {ms}ms)")
     else:
         print(output)
 
@@ -136,14 +193,19 @@ def _cmd_engines() -> None:
         print("No engines registered. Install extras: pip install docfold[all]")
         return
 
-    print(f"{'Engine':<12} {'Available':<12} {'Formats'}")
-    print("-" * 60)
+    print(f"{'Engine':<14} {'Status':<9} {'BBox':>4} {'Conf':>4} {'Tbl':>4} {'Img':>4}  Formats")
+    print("-" * 78)
     for e in engines:
         status = "YES" if e["available"] else "no"
-        exts = ", ".join(e["extensions"][:8])
-        if len(e["extensions"]) > 8:
+        caps = e.get("capabilities", {})
+        bbox = "+" if caps.get("bounding_boxes") else "-"
+        conf = "+" if caps.get("confidence") else "-"
+        tbl = "+" if caps.get("table_structure") else "-"
+        img = "+" if caps.get("images") else "-"
+        exts = ", ".join(e["extensions"][:6])
+        if len(e["extensions"]) > 6:
             exts += ", ..."
-        print(f"{e['name']:<12} {status:<12} {exts}")
+        print(f"{e['name']:<14} {status:<9} {bbox:>4} {conf:>4} {tbl:>4} {img:>4}  {exts}")
 
 
 async def _cmd_compare(args) -> None:

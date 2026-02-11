@@ -8,6 +8,18 @@ from enum import Enum
 from typing import Any
 
 
+@dataclass(frozen=True)
+class EngineCapabilities:
+    """Declares what enrichments an engine can populate in EngineResult."""
+
+    bounding_boxes: bool = False
+    confidence: bool = False
+    images: bool = False
+    table_structure: bool = False
+    heading_detection: bool = False
+    reading_order: bool = False
+
+
 class OutputFormat(str, Enum):
     MARKDOWN = "markdown"
     HTML = "html"
@@ -85,6 +97,15 @@ class DocumentEngine(ABC):
     def is_available(self) -> bool:
         """Return ``True`` if the engine's dependencies are installed and ready."""
         ...
+
+    @property
+    def capabilities(self) -> EngineCapabilities:
+        """Declare what enrichments this engine populates in :class:`EngineResult`.
+
+        Engines should override this to advertise their capabilities.
+        Defaults to all ``False``.
+        """
+        return EngineCapabilities()
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__} name={self.name!r} available={self.is_available()}>"

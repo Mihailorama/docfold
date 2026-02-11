@@ -1,49 +1,49 @@
-"""OCR engine adapter — PaddleOCR with Tesseract fallback.
+"""PaddleOCR engine adapter — multilingual OCR for scanned documents.
 
-Install: ``pip install docfold[ocr]``
+Install: ``pip install docfold[paddleocr]``
 """
 
 from __future__ import annotations
 
 import logging
+import os
+import tempfile
 import time
 from pathlib import Path
 from typing import Any
 
-from docfold.engines.base import DocumentEngine, EngineResult, OutputFormat
+from docfold.engines.base import DocumentEngine, EngineCapabilities, EngineResult, OutputFormat
 
 logger = logging.getLogger(__name__)
 
 _SUPPORTED_EXTENSIONS = {"png", "jpg", "jpeg", "tiff", "tif", "bmp", "webp", "pdf"}
 
 
-class OCREngine(DocumentEngine):
-    """OCR-based extraction using PaddleOCR (primary) and Tesseract (fallback).
+class PaddleOCREngine(DocumentEngine):
+    """OCR-based extraction using PaddleOCR.
 
-    For PDFs, pages are first rendered to images, then OCR is applied.
+    Supports 80+ languages. For PDFs, pages are rendered to images first.
     """
 
-    def __init__(self, lang: str = "en", use_paddle: bool = True) -> None:
+    def __init__(self, lang: str = "en") -> None:
         self._lang = lang
-        self._use_paddle = use_paddle
 
     @property
     def name(self) -> str:
-        return "ocr"
+        return "paddleocr"
 
     @property
     def supported_extensions(self) -> set[str]:
         return _SUPPORTED_EXTENSIONS
 
+    @property
+    def capabilities(self) -> EngineCapabilities:
+        return EngineCapabilities(confidence=True)
+
     def is_available(self) -> bool:
-        if self._use_paddle:
-            try:
-                import paddleocr  # noqa: F401
-                return True
-            except ImportError:
-                pass
         try:
-            import pytesseract  # noqa: F401
+            import paddleocr  # noqa: F401
+
             return True
         except ImportError:
             return False
@@ -69,7 +69,7 @@ class OCREngine(DocumentEngine):
             engine_name=self.name,
             confidence=confidence,
             processing_time_ms=elapsed_ms,
-            metadata={"lang": self._lang, "paddle": self._use_paddle},
+            metadata={"lang": self._lang},
         )
 
     def _run_ocr(self, file_path: str) -> tuple[str, float | None]:
@@ -80,45 +80,6 @@ class OCREngine(DocumentEngine):
         return self._ocr_image(file_path)
 
     def _ocr_image(self, image_path: str) -> tuple[str, float | None]:
-        if self._use_paddle:
-            try:
-                return self._paddle_ocr(image_path)
-            except Exception:
-                logger.warning("PaddleOCR failed, falling back to Tesseract", exc_info=True)
-
-        return self._tesseract_ocr(image_path)
-
-    def _ocr_pdf(self, pdf_path: str) -> tuple[str, float | None]:
-        """Convert PDF pages to images then OCR each page."""
-        try:
-            from pdf2image import convert_from_path
-        except ImportError:
-            raise ImportError("pdf2image is required for OCR on PDFs: pip install pdf2image")
-
-        images = convert_from_path(pdf_path)
-        texts: list[str] = []
-        confidences: list[float] = []
-
-        import os
-        import tempfile
-
-        for img in images:
-            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
-                tmp_path = tmp.name
-            try:
-                img.save(tmp_path)
-                text, conf = self._ocr_image(tmp_path)
-                texts.append(text)
-                if conf is not None:
-                    confidences.append(conf)
-            finally:
-                os.unlink(tmp_path)
-
-        full_text = "\n\n".join(texts)
-        avg_conf = sum(confidences) / len(confidences) if confidences else None
-        return full_text, avg_conf
-
-    def _paddle_ocr(self, image_path: str) -> tuple[str, float | None]:
         from paddleocr import PaddleOCR
 
         ocr = PaddleOCR(lang=self._lang, show_log=False)
@@ -138,10 +99,29 @@ class OCREngine(DocumentEngine):
         avg_conf = sum(confidences) / len(confidences) if confidences else None
         return full_text, avg_conf
 
-    def _tesseract_ocr(self, image_path: str) -> tuple[str, float | None]:
-        import pytesseract
-        from PIL import Image
+    def _ocr_pdf(self, pdf_path: str) -> tuple[str, float | None]:
+        """Convert PDF pages to images then OCR each page."""
+        try:
+            from pdf2image import convert_from_path
+        except ImportError:
+            raise ImportError("pdf2image is required for OCR on PDFs: pip install pdf2image")
 
-        img = Image.open(image_path)
-        text = pytesseract.image_to_string(img, lang=self._lang)
-        return text.strip(), None
+        images = convert_from_path(pdf_path)
+        texts: list[str] = []
+        confidences: list[float] = []
+
+        for img in images:
+            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+                tmp_path = tmp.name
+            try:
+                img.save(tmp_path)
+                text, conf = self._ocr_image(tmp_path)
+                texts.append(text)
+                if conf is not None:
+                    confidences.append(conf)
+            finally:
+                os.unlink(tmp_path)
+
+        full_text = "\n\n".join(texts)
+        avg_conf = sum(confidences) / len(confidences) if confidences else None
+        return full_text, avg_conf

@@ -1,14 +1,13 @@
 """Tests for preprocessing/detector module."""
 
-import os
-import tempfile
-import pytest
-from docfold.preprocessing.detector import detect_file_type, FileInfo
+from docfold.preprocessing.detector import FileInfo, detect_file_type
 
 
 class TestFileInfo:
     def test_is_pdf(self):
-        fi = FileInfo(path="x.pdf", extension="pdf", category="document", mime_type="application/pdf")
+        fi = FileInfo(
+            path="x.pdf", extension="pdf", category="document", mime_type="application/pdf",
+        )
         assert fi.is_pdf
         assert not fi.is_image
         # PDF has category "document", so is_office is True (documents are office files)

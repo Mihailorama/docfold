@@ -70,7 +70,7 @@ mistral-ocr = [
     "mistralai>=1.0",
 ]
 zerox = [
-    "py-zerox>=0.1",
+    "py-zerox>=0.0.5",
 ]
 textract = [
     "boto3>=1.28",

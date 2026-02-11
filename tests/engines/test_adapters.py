@@ -88,8 +88,9 @@ class TestMarkerEngine:
             assert e.is_available() is False
 
     def test_is_available_with_key(self):
-        from unittest.mock import patch
         import types
+        from unittest.mock import patch
+
         from docfold.engines.marker_engine import MarkerEngine
         e = MarkerEngine(api_key="test-key-123")
         with patch.dict("sys.modules", {"requests": types.ModuleType("requests")}):

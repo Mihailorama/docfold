@@ -1,0 +1,111 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "docfold"
+version = "0.1.0"
+description = "Turn any document into structured data. Unified interface for document structuring engines with built-in evaluation."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    { name = "Mihailorama", email = "mihailorama@gmail.com" },
+]
+keywords = [
+    "document-processing",
+    "pdf-extraction",
+    "ocr",
+    "document-structuring",
+    "table-extraction",
+    "layout-analysis",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Text Processing :: General",
+]
+
+dependencies = []
+
+[project.optional-dependencies]
+docling = [
+    "docling>=2.0",
+]
+mineru = [
+    "magic-pdf[full]>=0.9",
+]
+marker = [
+    "requests>=2.31",
+]
+pymupdf = [
+    "PyMuPDF>=1.23",
+]
+ocr = [
+    "paddleocr>=2.7",
+    "paddlepaddle>=2.5",
+    "pytesseract>=0.3.10",
+    "opencv-python>=4.7",
+    "Pillow>=10.0",
+    "pdf2image>=1.16",
+]
+evaluation = [
+    "jiwer>=3.0",          # WER/CER computation
+    "numpy>=1.23",
+    "scipy>=1.10",         # Kendall's tau for reading order
+    "tabulate>=0.9",       # Report tables
+    "psutil>=5.9",         # Memory measurement
+]
+all = [
+    "docfold[docling,mineru,marker,pymupdf,ocr,evaluation]",
+]
+dev = [
+    "docfold[all]",
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21",
+    "pytest-cov>=4.0",
+    "pytest-timeout>=2.1",
+    "ruff>=0.4",
+    "mypy>=1.8",
+]
+
+[project.urls]
+Homepage = "https://github.com/mihailorama/docfold"
+Documentation = "https://github.com/mihailorama/docfold/tree/main/docs"
+Repository = "https://github.com/mihailorama/docfold"
+Issues = "https://github.com/mihailorama/docfold/issues"
+Changelog = "https://github.com/mihailorama/docfold/blob/main/CHANGELOG.md"
+
+[project.scripts]
+docfold = "docfold.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/docfold"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = [
+    "integration: marks tests that require engine dependencies installed",
+    "slow: marks tests that take >30s",
+    "gpu: marks tests that require GPU",
+]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true

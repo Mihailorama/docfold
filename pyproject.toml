@@ -93,14 +93,17 @@ all = [
     # Note: zerox excluded from [all] — py-zerox requires Python 3.11+
     # Install separately: pip install docfold[zerox]
 ]
-dev = [
-    "docfold[all]",
+test = [
     "pytest>=7.0",
     "pytest-asyncio>=0.21",
     "pytest-cov>=4.0",
     "pytest-timeout>=2.1",
     "ruff>=0.4",
     "mypy>=1.8",
+]
+dev = [
+    "docfold[test]",
+    # Individual engines installed as needed for local dev
 ]
 
 [project.urls]

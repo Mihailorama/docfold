@@ -89,7 +89,9 @@ evaluation = [
     "psutil>=5.9",         # Memory measurement
 ]
 all = [
-    "docfold[docling,mineru,marker,pymupdf,paddleocr,tesseract,unstructured,llamaparse,mistral-ocr,zerox,textract,google-docai,azure-docint,evaluation]",
+    "docfold[docling,mineru,marker,pymupdf,paddleocr,tesseract,unstructured,llamaparse,mistral-ocr,textract,google-docai,azure-docint,evaluation]",
+    # Note: zerox excluded from [all] — py-zerox requires Python 3.11+
+    # Install separately: pip install docfold[zerox]
 ]
 dev = [
     "docfold[all]",

@@ -259,9 +259,9 @@ Docfold builds on and integrates with these excellent projects:
 
 | Project | Description |
 |---------|-------------|
-| [Datera](https://datera.ai) | AI-powered data transformation and document processing platform |
+| [Datatera.ai](https://datatera.ai) | AI-powered data transformation and document processing platform |
 | [Orquesta AI](https://orquestaai.com) | AI orchestration and agent management platform |
-| [AI Agent LBS](https://aiagentlbs.com) | AI agent services and location-based intelligence |
+| [AI Agent Labs](https://aiagentlbs.com) | AI agent services and location-based intelligence |
 
 ## Benchmarks
 

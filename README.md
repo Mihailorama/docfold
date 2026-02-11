@@ -52,7 +52,7 @@ for name, res in results.items():
 | [**MinerU**](https://github.com/opendatalab/MinerU) | Local | AGPL-3.0 | PDF | Recommended | `pip install docfold[mineru]` |
 | [**Marker API**](https://www.datalab.to/) | SaaS | Paid | PDF, Office, images | N/A | `pip install docfold[marker]` |
 | [**PyMuPDF**](https://pymupdf.readthedocs.io/) | Local | AGPL-3.0 | PDF | No | `pip install docfold[pymupdf]` |
-| [**OCR**](https://github.com/PaddlePaddle/PaddleOCR) | Local | Apache-2.0 | Images, scanned PDFs | Optional | `pip install docfold[ocr]` |
+| [**PaddleOCR**](https://github.com/PaddlePaddle/PaddleOCR) | Local | Apache-2.0 | Images, scanned PDFs | Optional | `pip install docfold[ocr]` |
 
 > **Adding your own engine?** Implement the `DocumentEngine` interface — see [Adding a Custom Engine](#adding-a-custom-engine) below.
 

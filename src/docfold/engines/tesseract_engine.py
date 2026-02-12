@@ -17,7 +17,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from docfold.engines.base import DocumentEngine, EngineResult, OutputFormat
+from docfold.engines.base import DocumentEngine, EngineCapabilities, EngineResult, OutputFormat
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +42,10 @@ class TesseractEngine(DocumentEngine):
     def supported_extensions(self) -> set[str]:
         return _SUPPORTED_EXTENSIONS
 
+    @property
+    def capabilities(self) -> EngineCapabilities:
+        return EngineCapabilities(confidence=True)
+
     def is_available(self) -> bool:
         try:
             import pytesseract  # noqa: F401
@@ -61,7 +65,7 @@ class TesseractEngine(DocumentEngine):
         start = time.perf_counter()
 
         loop = asyncio.get_running_loop()
-        text = await loop.run_in_executor(None, self._run_ocr, file_path)
+        text, confidence = await loop.run_in_executor(None, self._run_ocr, file_path)
 
         elapsed_ms = int((time.perf_counter() - start) * 1000)
 
@@ -69,26 +73,44 @@ class TesseractEngine(DocumentEngine):
             content=text,
             format=OutputFormat.TEXT,
             engine_name=self.name,
+            confidence=confidence,
             processing_time_ms=elapsed_ms,
             metadata={"lang": self._lang},
         )
 
-    def _run_ocr(self, file_path: str) -> str:
+    def _run_ocr(self, file_path: str) -> tuple[str, float | None]:
         ext = Path(file_path).suffix.lstrip(".").lower()
 
         if ext == "pdf":
             return self._ocr_pdf(file_path)
         return self._ocr_image(file_path)
 
-    def _ocr_image(self, image_path: str) -> str:
+    def _ocr_image(self, image_path: str) -> tuple[str, float | None]:
         import pytesseract
         from PIL import Image
 
         img = Image.open(image_path)
         text = pytesseract.image_to_string(img, lang=self._lang)
-        return text.strip()
 
-    def _ocr_pdf(self, pdf_path: str) -> str:
+        # Extract word-level confidence from Tesseract OSD data
+        confidence = self._get_confidence(img)
+
+        return text.strip(), confidence
+
+    def _get_confidence(self, img: Any) -> float | None:
+        """Extract average word-level confidence from Tesseract."""
+        try:
+            import pytesseract
+
+            data = pytesseract.image_to_data(img, lang=self._lang, output_type="dict")
+            confs = [int(c) for c in data["conf"] if int(c) >= 0]
+            if confs:
+                return sum(confs) / len(confs) / 100.0  # Normalize 0-100 → 0-1
+        except Exception:
+            logger.debug("Failed to extract Tesseract confidence", exc_info=True)
+        return None
+
+    def _ocr_pdf(self, pdf_path: str) -> tuple[str, float | None]:
         """Convert PDF pages to images then OCR each page."""
         try:
             from pdf2image import convert_from_path
@@ -97,15 +119,20 @@ class TesseractEngine(DocumentEngine):
 
         images = convert_from_path(pdf_path)
         texts: list[str] = []
+        confidences: list[float] = []
 
         for img in images:
             with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
                 tmp_path = tmp.name
             try:
                 img.save(tmp_path)
-                text = self._ocr_image(tmp_path)
+                text, conf = self._ocr_image(tmp_path)
                 texts.append(text)
+                if conf is not None:
+                    confidences.append(conf)
             finally:
                 os.unlink(tmp_path)
 
-        return "\n\n".join(texts)
+        full_text = "\n\n".join(texts)
+        avg_conf = sum(confidences) / len(confidences) if confidences else None
+        return full_text, avg_conf

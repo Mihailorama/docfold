@@ -160,6 +160,18 @@ def _build_router():
     except Exception:
         pass
 
+    try:
+        from docfold.engines.nougat_engine import NougatEngine
+        router.register(NougatEngine())
+    except Exception:
+        pass
+
+    try:
+        from docfold.engines.surya_engine import SuryaEngine
+        router.register(SuryaEngine())
+    except Exception:
+        pass
+
     return router
 
 

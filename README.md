@@ -4,9 +4,9 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![CI](https://github.com/mihailorama/docfold/actions/workflows/ci.yml/badge.svg)](https://github.com/mihailorama/docfold/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-163%20passed-brightgreen.svg)](#)
+[![Tests](https://img.shields.io/badge/tests-175%20passed-brightgreen.svg)](#)
 
-**Turn any document into structured data.** Unified Python toolkit for document structuring — one interface, 13 engines, built-in benchmarks.
+**Turn any document into structured data.** Unified Python toolkit for document structuring — one interface, 15 engines, built-in benchmarks.
 
 ## Engine Comparison
 
@@ -27,9 +27,8 @@
 | [**AWS Textract**](https://aws.amazon.com/textract/) | ✅ | SaaS | Paid | ★★★ | ★★★ | ★★★ | ✅ | ✅ | Fast | $$ |
 | [**Google Doc AI**](https://cloud.google.com/document-ai) | ✅ | SaaS | Paid | ★★★ | ★★★ | ★★★ | ✅ | ✅ | Fast | $$ |
 | [**Azure Doc Intel**](https://azure.microsoft.com/en-us/products/ai-services/ai-document-intelligence) | ✅ | SaaS | Paid | ★★★ | ★★★ | ★★★ | ✅ | ✅ | Fast | $$ |
-| [Nougat](https://github.com/facebookresearch/nougat) | — | Local | MIT | ★★★ | ★★☆ | ★★☆ | — | — | Slow | Free |
-| [GOT-OCR 2.0](https://github.com/Ucas-HaoranWei/GOT-OCR2.0) | — | Local | Apache | ★★☆ | ★★★ | ★★☆ | — | — | Slow | Free |
-| [Surya](https://github.com/VikParuchuri/surya) | — | Local | GPL | ★★☆ | ★★★ | ★★☆ | — | — | Medium | Free |
+| [**Nougat**](https://github.com/facebookresearch/nougat) | ✅ | Local | MIT | ★★★ | ★★☆ | ★★☆ | — | — | Slow | Free |
+| [**Surya**](https://github.com/VikParuchuri/surya) | ✅ | Local | GPL | ★★☆ | ★★★ | ★★☆ | ✅ | ✅ | Medium | Free |
 
 **★★★** Excellent **★★☆** Good **★☆☆** Basic **☆☆☆** Not supported — **$$** ~$1-3/1K pages **$$$** ~$5-15/1K pages — **BBox** Bounding boxes — **Conf** Confidence scores
 
@@ -99,6 +98,8 @@ for name, res in results.items():
 | [**AWS Textract**](https://aws.amazon.com/textract/) | SaaS | Paid | PDF, images | N/A | `pip install docfold[textract]` |
 | [**Google Doc AI**](https://cloud.google.com/document-ai) | SaaS | Paid | PDF, images | N/A | `pip install docfold[google-docai]` |
 | [**Azure Doc Intel**](https://azure.microsoft.com/en-us/products/ai-services/ai-document-intelligence) | SaaS | Paid | PDF, Office, HTML, images | N/A | `pip install docfold[azure-docint]` |
+| [**Nougat**](https://github.com/facebookresearch/nougat) | Local | MIT (code) | PDF | Recommended | `pip install docfold[nougat]` |
+| [**Surya**](https://github.com/VikParuchuri/surya) | Local | GPL-3.0 | PDF, images | Optional | `pip install docfold[surya]` |
 
 > **Adding your own engine?** Implement the `DocumentEngine` interface — see [Adding a Custom Engine](#adding-a-custom-engine) below.
 
@@ -323,7 +324,6 @@ Docfold builds on and integrates with these excellent projects:
 | [Mistral OCR](https://docs.mistral.ai/capabilities/document/) | Vision LLM document understanding |
 | [Zerox](https://github.com/getomni-ai/zerox) | Model-agnostic Vision LLM OCR |
 | [Nougat](https://github.com/facebookresearch/nougat) | Meta's academic PDF to Markdown model |
-| [GOT-OCR](https://github.com/Ucas-HaoranWei/GOT-OCR2.0) | General OCR Theory — end-to-end transformer OCR |
 | [Surya](https://github.com/VikParuchuri/surya) | Multilingual OCR + layout analysis |
 
 ### Built by

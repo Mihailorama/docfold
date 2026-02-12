@@ -394,6 +394,81 @@ class TestAzureDocIntEngine:
         assert caps.reading_order is True
 
 
+class TestNougatEngine:
+    def test_name(self):
+        from docfold.engines.nougat_engine import NougatEngine
+        e = NougatEngine()
+        assert e.name == "nougat"
+
+    def test_supported_extensions(self):
+        from docfold.engines.nougat_engine import NougatEngine
+        e = NougatEngine()
+        assert e.supported_extensions == {"pdf"}
+
+    def test_is_available_when_missing(self):
+        from docfold.engines.nougat_engine import NougatEngine
+        e = NougatEngine()
+        with patch.dict("sys.modules", {"nougat": None}):
+            result = e.is_available()
+            assert isinstance(result, bool)
+
+    def test_config_stored(self):
+        from docfold.engines.nougat_engine import NougatEngine
+        e = NougatEngine(model="facebook/nougat-base", batch_size=4, no_skipping=True)
+        assert e._model == "facebook/nougat-base"
+        assert e._batch_size == 4
+        assert e._no_skipping is True
+
+    def test_capabilities(self):
+        from docfold.engines.nougat_engine import NougatEngine
+        caps = NougatEngine().capabilities
+        assert caps.table_structure is True
+        assert caps.heading_detection is True
+        assert caps.reading_order is True
+        assert caps.bounding_boxes is False
+        assert caps.confidence is False
+
+
+class TestSuryaEngine:
+    def test_name(self):
+        from docfold.engines.surya_engine import SuryaEngine
+        e = SuryaEngine()
+        assert e.name == "surya"
+
+    def test_supported_extensions(self):
+        from docfold.engines.surya_engine import SuryaEngine
+        e = SuryaEngine()
+        exts = e.supported_extensions
+        assert "pdf" in exts
+        assert "png" in exts
+        assert "jpg" in exts
+        assert "jpeg" in exts
+        assert "tiff" in exts
+        assert "webp" in exts
+
+    def test_is_available_when_missing(self):
+        from docfold.engines.surya_engine import SuryaEngine
+        e = SuryaEngine()
+        with patch.dict("sys.modules", {"surya": None}):
+            result = e.is_available()
+            assert isinstance(result, bool)
+
+    def test_config_stored(self):
+        from docfold.engines.surya_engine import SuryaEngine
+        e = SuryaEngine(langs=["en", "ru"])
+        assert e._langs == ["en", "ru"]
+
+    def test_capabilities(self):
+        from docfold.engines.surya_engine import SuryaEngine
+        caps = SuryaEngine().capabilities
+        assert caps.bounding_boxes is True
+        assert caps.confidence is True
+        assert caps.images is True
+        assert caps.table_structure is True
+        assert caps.heading_detection is True
+        assert caps.reading_order is True
+
+
 class TestEngineCapabilities:
     """Verify capabilities are declared correctly on engines with non-default values."""
 
@@ -454,6 +529,8 @@ class TestAllEnginesImplementInterface:
         "docfold.engines.textract_engine.TextractEngine",
         "docfold.engines.google_docai_engine.GoogleDocAIEngine",
         "docfold.engines.azure_docint_engine.AzureDocIntEngine",
+        "docfold.engines.nougat_engine.NougatEngine",
+        "docfold.engines.surya_engine.SuryaEngine",
     ])
     def test_has_required_attributes(self, engine_cls_path):
         module_path, cls_name = engine_cls_path.rsplit(".", 1)

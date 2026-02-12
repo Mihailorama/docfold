@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 # the first *available* engine that supports the extension.
 
 _IMAGE_PRIORITY = [
-    "paddleocr", "tesseract", "docling", "mistral_ocr",
+    "surya", "paddleocr", "tesseract", "docling", "mistral_ocr",
     "google_docai", "textract", "azure_docint", "zerox", "marker",
 ]
 
@@ -32,7 +32,7 @@ _EXTENSION_PRIORITY: dict[str, list[str]] = {
     "pdf": [
         "docling", "mineru", "unstructured", "marker",
         "llamaparse", "mistral_ocr", "google_docai", "azure_docint", "textract",
-        "zerox", "pymupdf", "paddleocr", "tesseract",
+        "zerox", "nougat", "surya", "pymupdf", "paddleocr", "tesseract",
     ],
     # --- Office ---
     "docx": ["docling", "marker", "unstructured", "llamaparse", "azure_docint"],
@@ -74,7 +74,7 @@ _EXTENSION_PRIORITY: dict[str, list[str]] = {
 _DEFAULT_FALLBACK = [
     "docling", "mineru", "unstructured", "marker",
     "llamaparse", "mistral_ocr", "google_docai", "azure_docint", "textract",
-    "zerox", "pymupdf", "paddleocr", "tesseract",
+    "zerox", "nougat", "surya", "pymupdf", "paddleocr", "tesseract",
 ]
 
 

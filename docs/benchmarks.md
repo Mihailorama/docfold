@@ -18,9 +18,8 @@ This guide helps you choose the right document processing engine for your use ca
 | **LlamaParse** | SaaS | Paid | ★★★ | ★★★ | ★★★ | ★★★ | ★★☆ | Fast | ~$3/1K pages |
 | **Mistral OCR** | SaaS | Paid | ★★★ | ★★★ | ★★★ | ★★★ | ★★★ | Fast | ~$1/1K pages |
 | **Zerox** | VLM | MIT | ★★★ | ★★★ | ★★☆ | ★★☆ | ★★★ | Slow | VLM API cost |
-| Nougat | Local | MIT | ★★★ | ★★☆ | ★★☆ | ★★★ | ★☆☆ | Slow | Free |
-| GOT-OCR 2.0 | Local | Apache-2.0 | ★★☆ | ★★★ | ★★☆ | ★★☆ | ★★☆ | Slow | Free |
-| Surya | Local | GPL-3.0 | ★★☆ | ★★★ | ★★☆ | ★☆☆ | ★★★ (90+) | Medium | Free |
+| **Nougat** | Local | MIT | ★★★ | ★★☆ | ★★☆ | ★★★ | ★☆☆ | Slow | Free |
+| **Surya** | Local | GPL-3.0 | ★★☆ | ★★★ | ★★☆ | ★☆☆ | ★★★ (90+) | Medium | Free |
 | AWS Textract | SaaS | Paid | ★★★ | ★★★ | ★★★ | ★☆☆ | ★★☆ | Fast | ~$1.50/1K pages |
 | Google Document AI | SaaS | Paid | ★★★ | ★★★ | ★★★ | ★★☆ | ★★★ | Fast | ~$1.50/1K pages |
 | Azure Document Intelligence | SaaS | Paid | ★★★ | ★★★ | ★★★ | ★★☆ | ★★★ | Fast | ~$1.50/1K pages |
@@ -170,24 +169,25 @@ This guide helps you choose the right document processing engine for your use ca
 
 ---
 
-## Engines Without Docfold Adapter (Yet)
-
-The following engines appear in the comparison table but don't have a built-in docfold adapter. You can use them via the [custom engine interface](../README.md#adding-a-custom-engine) or contribute an adapter.
-
 ### Nougat (Meta)
-- **Best for:** Academic papers with heavy math notation.
-- Transformer model trained specifically on arXiv papers. Excellent LaTeX formula output. Poor on non-academic documents. English-centric.
-- [GitHub](https://github.com/facebookresearch/nougat) | [Paper](https://arxiv.org/abs/2308.13418)
 
-### GOT-OCR 2.0
-- **Best for:** End-to-end OCR research, experimental usage.
-- General OCR Theory — single transformer for detection + recognition. Strong OCR accuracy. Still experimental; API may change.
-- [GitHub](https://github.com/Ucas-HaoranWei/GOT-OCR2.0) | [Paper](https://arxiv.org/abs/2409.01704)
+**Best for:** Academic papers with heavy math notation.
 
-### Surya
-- **Best for:** OCR + layout detection, especially multilingual.
-- By Vik Paruchuri (Marker author). 90+ languages. Good layout segmentation. GPL-3.0 license.
-- [GitHub](https://github.com/VikParuchuri/surya)
+- **Strengths:** Transformer model (Swin encoder + mBART decoder) trained on arXiv papers. Excellent LaTeX formula output. Preserves document structure as Mathpix Markdown. Heading and table detection built-in. MIT licensed code.
+- **Weaknesses:** PDF-only. English-centric (may work on other Latin-based languages). No bounding boxes or confidence scores. Model weights are CC-BY-NC (non-commercial).
+- **GPU:** Strongly recommended (CUDA). CPU mode is very slow.
+- **Install:** `pip install docfold[nougat]`
+- **Links:** [GitHub](https://github.com/facebookresearch/nougat) | [Paper](https://arxiv.org/abs/2308.13418) | [Hugging Face](https://huggingface.co/facebook/nougat-small)
+
+### Surya (Vik Paruchuri)
+
+**Best for:** Multilingual OCR + layout analysis with bounding boxes.
+
+- **Strengths:** 90+ languages. Provides bounding boxes for text lines, layout elements, and table cells. Layout analysis identifies 11 element types (title, section-header, table, picture, etc.). Handles rotated tables. By the same author as Marker.
+- **Weaknesses:** GPL-3.0 license may be restrictive for commercial use. Newer project — API may evolve. Requires PyTorch.
+- **GPU:** Optional, speeds up processing significantly.
+- **Install:** `pip install docfold[surya]`
+- **Links:** [GitHub](https://github.com/VikParuchuri/surya)
 
 ---
 
@@ -210,6 +210,8 @@ Capabilities each engine can populate in `EngineResult`:
 | **Textract** | ✅ | ✅ | — | ✅ | — | ✅ |
 | **Google DocAI** | ✅ | ✅ | — | ✅ | ✅ | ✅ |
 | **Azure DocInt** | ✅ | ✅ | — | ✅ | ✅ | ✅ |
+| **Nougat** | — | — | — | ✅ | ✅ | ✅ |
+| **Surya** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 - **BBox** — Bounding box coordinates for text elements
 - **Confidence** — Per-element or overall confidence score
@@ -239,6 +241,8 @@ Capabilities each engine can populate in `EngineResult`:
 | **Textract** | ✅ | — | — | — | — | ✅ | — | — | — |
 | **Google DocAI** | ✅ | — | — | — | — | ✅ | — | — | — |
 | **Azure DocInt** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | — | — |
+| **Nougat** | ✅ | — | — | — | — | — | — | — | — |
+| **Surya** | ✅ | — | — | — | — | ✅ | — | — | — |
 
 *\* PDF pages are rendered to images before OCR.*
 
@@ -257,7 +261,8 @@ Capabilities each engine can populate in `EngineResult`:
 | Unstructured (fast) | 2 GB | 4 GB | — | ~500 MB |
 | Unstructured (hi_res) | 8 GB | 16 GB | Optional | ~2 GB |
 | Nougat | 8 GB | 16 GB | CUDA 8+ GB | ~1.5 GB |
-| GOT-OCR 2.0 | 8 GB | 16 GB | CUDA 8+ GB | ~2 GB |
+| Surya | 4 GB | 8 GB | Optional | ~1 GB |
+
 
 *SaaS engines (LlamaParse, Mistral OCR, Zerox, Marker API, Textract, Google DocAI, Azure DocInt) have no local hardware requirements.*
 
@@ -271,6 +276,8 @@ Capabilities each engine can populate in `EngineResult`:
 | PaddleOCR | Free | $0 |
 | Tesseract | Free | $0 |
 | Docling | Free | $0 (compute only) |
+| Nougat | Free | $0 (compute + GPU) |
+| Surya | Free | $0 (compute only) |
 | MinerU | Free | $0 (compute + GPU) |
 | Unstructured | Free / API | $0 local / ~$10 API |
 | Marker API | SaaS | ~$1 |

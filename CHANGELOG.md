@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-02-12
+
+### Fixed
+
+- `__version__` in package `__init__.py` was stuck at `0.1.0` — now synced with pyproject.toml
+
+## [0.5.0] - 2026-02-12
+
+### Added
+
+- **`docfold.utils` package** — optional smart routing utilities for consumers:
+  - `pre_analyze(file_path)` — lightweight file classification (~50ms): detects `pdf_text` / `pdf_scanned` / `image` / `office` / `html` / `unknown`, page count, text layer presence, optional language detection
+  - `quality_ok(result)` — quality assessment for `EngineResult`: minimum text length, OCR confidence threshold, gibberish ratio check
+  - `QualityThresholds` — configurable via dataclass or env vars (`DOCFOLD_QUALITY_*`)
+  - `gibberish_ratio(text)` — detect OCR garbage (control chars, box-drawing elements)
+- **Tesseract confidence scores** — engine now populates `confidence` field using word-level `image_to_data()` averaging (normalized 0–100 → 0–1)
+- Tesseract `EngineCapabilities(confidence=True)` declaration
+- 50 new tests (175 → 225 total)
+
 ## [0.4.0] - 2026-02-12
 
 ### Added

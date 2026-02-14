@@ -11,15 +11,15 @@ Document segmentation covers **four distinct sub-problems:**
 | Problem | Example | Key Challenge |
 |---|---|---|
 | **Page Stream Segmentation (PSS)** | PDF with contract + invoice concatenated | Detecting document boundaries |
-| **Section segmentation** | Annual report → balance sheet, P&L, cash flow | Finding logical section breaks |
+| **Section segmentation** | Annual report → balance sheet, P&L, notes | Finding logical section breaks |
 | **Layout analysis** | Detecting headings, tables, paragraphs on a page | Within-page element identification |
 | **Page-level classification** | Classifying each page as "invoice" / "contract" / "letter" | Per-page type labeling |
+
+These apply to **any domain** — finance, logistics, medicine, construction, legal, HR, etc.
 
 ---
 
 ## 1. Page Stream Segmentation (Multi-Document PDF Splitting)
-
-**The least mature area in open source.** No production-ready tool exists.
 
 ### Academic State-of-the-Art
 
@@ -32,6 +32,17 @@ Document segmentation covers **four distinct sub-problems:**
 
 ### Open-Source PSS Implementations
 
+**Marker / Datalab API** — [GitHub](https://github.com/datalab-to/marker), [Docs](https://documentation.datalab.to/api-reference/marker)
+- **`segmentation_schema` API parameter** — provide JSON with segment names and descriptions, returns page ranges for each detected segment
+- Available via Datalab hosted API and Forge UI
+- Also supports TOC-driven workflow: extract table of contents → parse into page ranges → process per-section with `--page_range`
+- Status: **production-ready** (via Datalab API); local CLI supports `--page_range` but not automatic schema-driven segmentation
+
+**Unstract PDF Splitter** — [unstract.com](https://unstract.com/blog/pdf-splitter-api-ai-powered-mixed-combined-pdf-splitter/)
+- LLM + Vision AI to detect document boundaries; returns labeled individual PDFs
+- License: AGPL-3.0 (platform), cloud API for splitter
+- Status: commercial with open-source platform
+
 **agiagoulas/page-stream-segmentation** — [GitHub](https://github.com/agiagoulas/page-stream-segmentation)
 - Multi-modal CNN + BERT; predicts if consecutive pages belong to same document
 - HuggingFace model: `agiagoulas/bert-pss`
@@ -41,16 +52,13 @@ Document segmentation covers **four distinct sub-problems:**
 - CNN combining textual + visual features
 - Status: academic reference implementation
 
-**Unstract PDF Splitter** — [unstract.com](https://unstract.com/blog/pdf-splitter-api-ai-powered-mixed-combined-pdf-splitter/)
-- LLM + Vision AI to detect document boundaries; returns labeled individual PDFs
-- License: AGPL-3.0 (platform), cloud API for splitter
-- Status: commercial with open-source platform
-
 ### Practical PSS Approaches
 
-1. **Fine-tune Mistral-7B** on TABME++ dataset (best research result, F1 > 0.9)
-2. **Page classification + transition detection** — classify each page with DiT/LayoutLMv3, split when type changes
-3. **Visual similarity** — detect visual discontinuities between consecutive pages (header/footer changes, format shifts)
+1. **Marker `segmentation_schema`** — provide document type descriptions, get page ranges back (production-ready via API)
+2. **Fine-tune Mistral-7B** on TABME++ dataset (best research result, F1 > 0.9)
+3. **Page classification + transition detection** — classify each page with DiT/LayoutLMv3, split when type changes
+4. **TOC-driven splitting** — extract table of contents, parse section→page mappings, split accordingly
+5. **Visual similarity** — detect visual discontinuities between consecutive pages (header/footer changes, format shifts)
 
 ### Key PSS Datasets
 
@@ -62,7 +70,44 @@ Document segmentation covers **four distinct sub-problems:**
 
 ---
 
-## 2. Layout Analysis & Within-Page Segmentation
+## 2. Layout Analysis & Section Detection
+
+### Marker (Datalab) — ~29k stars
+
+- **License:** GPL (code), AI Pubs Open Rail-M (weights)
+- **Comprehensive multi-level segmentation built in:**
+
+**Layout-level segmentation (automatic in every conversion):**
+- Surya's `LayoutPredictor` (modified EfficientViT) classifies every region on every page into 15+ types including `Section-header`, `Table`, `Form`, `Figure`, `Caption`, `Footnote`, etc.
+- Determines reading order across multi-column layouts
+- `SectionHeaderProcessor` builds heading hierarchy (h1–h6)
+
+**Hierarchical output structure:**
+- **JSON output** (`--output_format json`): tree structure with `children` preserving section nesting
+- **Chunks output** (`--output_format chunks`): flattened list, each block with explicit `section_hierarchy` field mapping heading levels to titles (e.g., `{"1": "Main Heading", "2": "Subheading"}`)
+- **Auto-generated table of contents** from detected headings with `title`, `heading_level`, `page_id`, `polygon`
+
+**Multi-document segmentation (Datalab API):**
+- `segmentation_schema` parameter — JSON with segment names/descriptions → returns page ranges per segment
+- Designed for "digitally stapled" PDFs (e.g., rental application packet with many sub-documents)
+
+**Key CLI flags:**
+| Flag | Description |
+|---|---|
+| `--output_format json\|chunks\|markdown\|html` | `json` = tree, `chunks` = flat with section_hierarchy |
+| `--page_range "0-5"` or `"0,3,5-10"` | Process specific page ranges |
+| `--use_llm` | Gemini LLM for enhanced accuracy (table merging, math, forms) |
+| `--paginate` | Separate pages with horizontal rules |
+| `--debug` | Save layout overlay images + bounding box JSON |
+
+**Five Surya models used:**
+| Model | Purpose |
+|---|---|
+| LayoutPredictor | Region classification (15+ types incl. Section-header) |
+| RecognitionPredictor | OCR |
+| TableRecPredictor | Table structure recognition |
+| DetectionPredictor | Text boundary detection |
+| OCRErrorPredictor | Recognition error correction |
 
 ### DocLayNet (Dataset)
 
@@ -161,23 +206,11 @@ Document segmentation covers **four distinct sub-problems:**
 
 ---
 
-## 5. Financial Report Section Detection
-
-**No dedicated open-source tool exists.** Practical approaches:
-
-1. **XBRL/SEC EDGAR parsing** — US public company filings are already tagged in XBRL; parse directly
-2. **Layout analysis + heading detection** — Docling/Unstructured detect section headers ("Balance Sheet", "Cash Flow Statement"), segment at boundaries
-3. **LLM/VLM classification** — financial pages have distinctive visual patterns (dense tables vs narrative text)
-4. **Fine-tune LayoutLMv3** on custom dataset of financial report pages labeled by section type
-5. **Pattern matching** — regex on detected headings ("Consolidated Balance Sheet", "Notes to Financial Statements")
-
----
-
 ## Key Gaps in Open Source
 
-1. **No production-ready PSS tool** — academic research is solid (F1 > 0.9 with fine-tuned LLMs) but implementations are prototype-level
-2. **No financial-document-specific segmentation** — GROBID covers scientific papers; nothing equivalent for financial reports
-3. **"Layout analysis" ≠ "document segmentation"** — Docling/Unstructured excel at within-page elements but don't address cross-page document boundaries
+1. **PSS is maturing but not fully solved** — Marker's `segmentation_schema` (via API) is the closest to production-ready; academic fine-tuned LLMs show strong results but lack turnkey implementations
+2. **No domain-specific segmentation models** — GROBID covers scholarly papers; nothing equivalent for arbitrary business documents (logistics waybills, medical records, construction permits, etc.)
+3. **"Layout analysis" ≠ "document segmentation"** — Docling/Unstructured excel at within-page elements but don't address cross-page document boundaries. Marker bridges this gap with its `segmentation_schema` API.
 4. **Annotation tooling is scarce** — building custom PSS datasets requires labeling document boundaries, which few tools support
 
 ---
@@ -186,10 +219,12 @@ Document segmentation covers **four distinct sub-problems:**
 
 | Tool | PSS? | Section Detection | Layout Analysis | Page Classification | License | Stars | CPU? |
 |---|---|---|---|---|---|---|---|
+| **Marker** | **Yes** (API) | **Yes** (heading hierarchy) | **Yes** (Surya, 15+ types) | No | GPL / Rail-M | ~29k | GPU preferred |
 | **Docling** | No | Yes (hierarchical) | Yes (258M model) | No | MIT | ~52.7k | Yes (slow) |
 | **Unstructured** | No | Yes (by_title) | Yes (hi_res mode) | No | Apache 2.0 | ~13.9k | Yes (fast mode) |
 | **GROBID** | No | Yes (scholarly) | Yes (CRF/DL) | No | Apache 2.0 | ~3.2k | Yes |
 | **deepdoctection** | No | Via pipeline | Yes (Detectron2) | Yes (LayoutLM) | Apache 2.0 | ~3.1k | Depends |
+| **Unstract** | **Yes** (API) | No | No | No | AGPL-3.0 | ~4k | Cloud |
 | **DiT-base** | No | No | No | Yes (92.7%) | MIT | N/A | Yes (86M) |
 | **LayoutLMv3** | No | No | No | Yes (95%) | MIT | N/A | Yes (133M) |
 | **Mistral fine-tuned** | Yes (F1>0.9) | No | No | No | Apache 2.0 | N/A | GPU |

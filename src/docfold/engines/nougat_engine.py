@@ -61,7 +61,7 @@ class NougatEngine(DocumentEngine):
         try:
             import nougat  # noqa: F401
             return True
-        except ImportError:
+        except Exception:
             return False
 
     async def process(

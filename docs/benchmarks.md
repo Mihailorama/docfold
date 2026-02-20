@@ -14,6 +14,7 @@ This guide helps you choose the right document processing engine for your use ca
 | **PyMuPDF** | Local | AGPL-3.0 | ★★★ | ☆☆☆ | ★☆☆ | ☆☆☆ | ★★★ | Ultra-fast | Free |
 | **PaddleOCR** | Local | Apache-2.0 | ★☆☆ | ★★★ | ★★☆ | ☆☆☆ | ★★★ (80+) | Medium | Free |
 | **Tesseract** | Local | Apache-2.0 | ★☆☆ | ★★☆ | ★☆☆ | ☆☆☆ | ★★★ (100+) | Medium | Free |
+| **EasyOCR** | Local | Apache-2.0 | ★☆☆ | ★★★ | ☆☆☆ | ☆☆☆ | ★★★ (80+) | Medium | Free |
 | **Unstructured** | Local/SaaS | Apache-2.0 | ★★☆ | ★★☆ | ★★☆ | ★☆☆ | ★★☆ | Medium | Free / Paid API |
 | **LlamaParse** | SaaS | Paid | ★★★ | ★★★ | ★★★ | ★★★ | ★★☆ | Fast | ~$3/1K pages |
 | **Mistral OCR** | SaaS | Paid | ★★★ | ★★★ | ★★★ | ★★★ | ★★★ | Fast | ~$1/1K pages |
@@ -90,6 +91,16 @@ This guide helps you choose the right document processing engine for your use ca
 - **GPU:** Not supported.
 - **Install:** `pip install docfold[tesseract]` + system binary
 - **Links:** [GitHub](https://github.com/tesseract-ocr/tesseract)
+
+### EasyOCR (JaidedAI)
+
+**Best for:** Easy-setup OCR with PyTorch, good multilingual support.
+
+- **Strengths:** 80+ languages. Simple API. PyTorch-based — shares GPU with other PyTorch models in your pipeline. Good accuracy on clean documents. Apache license.
+- **Weaknesses:** Slower than PaddleOCR on most benchmarks. No table or layout analysis. Large model downloads. Higher memory usage than Tesseract.
+- **GPU:** Optional, recommended for speed.
+- **Install:** `pip install docfold[easyocr]`
+- **Links:** [GitHub](https://github.com/JaidedAI/EasyOCR)
 
 ### Unstructured
 

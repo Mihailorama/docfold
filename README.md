@@ -6,7 +6,9 @@
 [![CI](https://github.com/mihailorama/docfold/actions/workflows/ci.yml/badge.svg)](https://github.com/mihailorama/docfold/actions/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/tests-175%20passed-brightgreen.svg)](#)
 
-**Turn any document into structured data.** Unified Python toolkit for document structuring — one interface, 15 engines, built-in benchmarks.
+**Turn any document into structured data.** Unified Python toolkit for document structuring — one interface, 16 engines, built-in benchmarks.
+
+> Read the announcement: [Docfold - open-source document processing toolkit](https://datatera.ai/blog/docfold-open-source)
 
 ## Engine Comparison
 
@@ -20,6 +22,7 @@
 | [**PyMuPDF**](https://pymupdf.readthedocs.io/) | ✅ | Local | AGPL | ★★★ | ☆☆☆ | ★☆☆ | — | — | Ultra | Free |
 | [**PaddleOCR**](https://github.com/PaddlePaddle/PaddleOCR) | ✅ | Local | Apache | ★☆☆ | ★★★ | ★★☆ | — | ✅ | Medium | Free |
 | [**Tesseract**](https://github.com/tesseract-ocr/tesseract) | ✅ | Local | Apache | ★☆☆ | ★★☆ | ★☆☆ | — | — | Medium | Free |
+| [**EasyOCR**](https://github.com/JaidedAI/EasyOCR) | ✅ | Local | Apache | ★☆☆ | ★★★ | ☆☆☆ | — | ✅ | Medium | Free |
 | [**Unstructured**](https://github.com/Unstructured-IO/unstructured) | ✅ | Local | Apache | ★★☆ | ★★☆ | ★★☆ | — | — | Medium | Free |
 | [**LlamaParse**](https://docs.llamaindex.ai/en/stable/llama_cloud/llama_parse/) | ✅ | SaaS | Paid | ★★★ | ★★★ | ★★★ | — | — | Fast | $$ |
 | [**Mistral OCR**](https://docs.mistral.ai/capabilities/document/) | ✅ | SaaS | Paid | ★★★ | ★★★ | ★★★ | — | — | Fast | $$ |
@@ -39,7 +42,7 @@
 | Your situation | Recommended engine |
 |---|---|
 | Digital PDF, speed is critical | **PyMuPDF** — zero deps, ~1000 pages/sec |
-| Scanned documents, need OCR | **PaddleOCR** (80+ langs) or **Tesseract** (100+ langs) |
+| Scanned documents, need OCR | **PaddleOCR** (80+ langs), **EasyOCR** (PyTorch), or **Tesseract** (100+ langs) |
 | Complex layouts + tables | **Docling** or **MinerU** (free), **LlamaParse** (paid) |
 | Academic papers + math formulas | **MinerU** or **Nougat** (free), **Mistral OCR** (paid) |
 | Best quality, budget available | **Mistral OCR** or **LlamaParse** |
@@ -91,6 +94,7 @@ for name, res in results.items():
 | [**PyMuPDF**](https://pymupdf.readthedocs.io/) | Local | AGPL-3.0 | PDF | No | `pip install docfold[pymupdf]` |
 | [**PaddleOCR**](https://github.com/PaddlePaddle/PaddleOCR) | Local | Apache-2.0 | Images, scanned PDFs | Optional | `pip install docfold[paddleocr]` |
 | [**Tesseract**](https://github.com/tesseract-ocr/tesseract) | Local | Apache-2.0 | Images, scanned PDFs | No | `pip install docfold[tesseract]` |
+| [**EasyOCR**](https://github.com/JaidedAI/EasyOCR) | Local | Apache-2.0 | Images, scanned PDFs | Optional | `pip install docfold[easyocr]` |
 | [**Unstructured**](https://github.com/Unstructured-IO/unstructured) | Local | Apache-2.0 | PDF, Office, HTML, email, ePub | Optional | `pip install docfold[unstructured]` |
 | [**LlamaParse**](https://docs.llamaindex.ai/en/stable/llama_cloud/llama_parse/) | SaaS | Paid | PDF, Office, images | N/A | `pip install docfold[llamaparse]` |
 | [**Mistral OCR**](https://docs.mistral.ai/capabilities/document/) | SaaS | Paid | PDF, images | N/A | `pip install docfold[mistral-ocr]` |

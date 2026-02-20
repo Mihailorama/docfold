@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "docfold"
-version = "0.5.1"
+version = "0.6.0"
 description = "Turn any document into structured data. Unified interface for document structuring engines with built-in evaluation."
 readme = "README.md"
 license = "MIT"
@@ -60,6 +60,11 @@ tesseract = [
     "Pillow>=10.0",
     "pdf2image>=1.16",
 ]
+easyocr = [
+    "easyocr>=1.7",
+    "Pillow>=10.0",
+    "pdf2image>=1.16",
+]
 unstructured = [
     "unstructured[all-docs]>=0.16",
 ]
@@ -98,7 +103,7 @@ evaluation = [
     "psutil>=5.9",         # Memory measurement
 ]
 all = [
-    "docfold[docling,mineru,marker,pymupdf,paddleocr,tesseract,unstructured,llamaparse,mistral-ocr,textract,google-docai,azure-docint,nougat,surya,evaluation]",
+    "docfold[docling,mineru,marker,pymupdf,paddleocr,tesseract,easyocr,unstructured,llamaparse,mistral-ocr,textract,google-docai,azure-docint,nougat,surya,evaluation]",
     # Note: zerox excluded from [all] — py-zerox requires Python 3.11+
     # Install separately: pip install docfold[zerox]
 ]

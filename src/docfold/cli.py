@@ -119,6 +119,12 @@ def _build_router():
         pass
 
     try:
+        from docfold.engines.easyocr_engine import EasyOCREngine
+        router.register(EasyOCREngine())
+    except Exception:
+        pass
+
+    try:
         from docfold.engines.unstructured_engine import UnstructuredEngine
         router.register(UnstructuredEngine())
     except Exception:

@@ -175,6 +175,45 @@ class TestTesseractEngine:
         assert isinstance(e.is_available(), bool)
 
 
+class TestEasyOCREngine:
+    def test_name(self):
+        from docfold.engines.easyocr_engine import EasyOCREngine
+        e = EasyOCREngine()
+        assert e.name == "easyocr"
+
+    def test_supported_extensions(self):
+        from docfold.engines.easyocr_engine import EasyOCREngine
+        e = EasyOCREngine()
+        exts = e.supported_extensions
+        assert "png" in exts
+        assert "jpg" in exts
+        assert "pdf" in exts
+        assert "tiff" in exts
+
+    def test_config_stored(self):
+        from docfold.engines.easyocr_engine import EasyOCREngine
+        e = EasyOCREngine(lang=["ru", "en"], gpu=False)
+        assert e._lang == ["ru", "en"]
+        assert e._gpu is False
+
+    def test_config_defaults(self):
+        from docfold.engines.easyocr_engine import EasyOCREngine
+        e = EasyOCREngine()
+        assert e._lang == ["en"]
+        assert e._gpu is True
+
+    def test_is_available_returns_bool(self):
+        from docfold.engines.easyocr_engine import EasyOCREngine
+        e = EasyOCREngine()
+        assert isinstance(e.is_available(), bool)
+
+    def test_capabilities(self):
+        from docfold.engines.easyocr_engine import EasyOCREngine
+        e = EasyOCREngine()
+        caps = e.capabilities
+        assert caps.confidence is True
+
+
 class TestUnstructuredEngine:
     def test_name(self):
         from docfold.engines.unstructured_engine import UnstructuredEngine
@@ -522,6 +561,7 @@ class TestAllEnginesImplementInterface:
         "docfold.engines.pymupdf_engine.PyMuPDFEngine",
         "docfold.engines.paddleocr_engine.PaddleOCREngine",
         "docfold.engines.tesseract_engine.TesseractEngine",
+        "docfold.engines.easyocr_engine.EasyOCREngine",
         "docfold.engines.unstructured_engine.UnstructuredEngine",
         "docfold.engines.llamaparse_engine.LlamaParseEngine",
         "docfold.engines.mistral_ocr_engine.MistralOCREngine",

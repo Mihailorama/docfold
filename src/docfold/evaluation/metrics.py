@@ -18,7 +18,8 @@ def compute_cer(predicted: str, reference: str) -> float:
         return 0.0 if not predicted else float(len(predicted))
     try:
         from jiwer import cer
-        return cer(reference, predicted)
+        result = cer(reference, predicted)
+        return result if isinstance(result, float) else 0.0
     except ImportError:
         return _levenshtein_ratio(predicted, reference, char_level=True)
 

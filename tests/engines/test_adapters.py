@@ -98,10 +98,10 @@ class TestMarkerEngine:
 
     def test_config_stored(self):
         from docfold.engines.marker_engine import MarkerEngine
-        e = MarkerEngine(api_key="k", use_llm=True, force_ocr=True)
+        e = MarkerEngine(api_key="k", mode="fast", paginate=True)
         assert e._api_key == "k"
-        assert e._use_llm is True
-        assert e._force_ocr is True
+        assert e._defaults["mode"] == "fast"
+        assert e._defaults["paginate"] is True
 
 
 class TestPyMuPDFEngine:

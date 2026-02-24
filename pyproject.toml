@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "docfold"
-version = "0.6.0"
+version = "0.6.1"
 description = "Turn any document into structured data. Unified interface for document structuring engines with built-in evaluation."
 readme = "README.md"
 license = "MIT"

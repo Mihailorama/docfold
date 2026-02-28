@@ -200,6 +200,7 @@ class MarkerEngine(DocumentEngine):
         for _ in range(_DEFAULT_MAX_POLLS):
             time.sleep(_DEFAULT_POLL_INTERVAL)
             resp = requests.get(check_url, headers=headers, timeout=30)
+            resp.raise_for_status()
             result = resp.json()
 
             if result.get("status") == "complete":

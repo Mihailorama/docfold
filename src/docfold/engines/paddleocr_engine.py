@@ -82,7 +82,9 @@ class PaddleOCREngine(DocumentEngine):
     def _ocr_image(self, image_path: str) -> tuple[str, float | None]:
         from paddleocr import PaddleOCR
 
-        ocr = PaddleOCR(lang=self._lang, show_log=False)
+        # Suppress noisy PaddleOCR logs (show_log param removed in PaddleOCR 3.x)
+        logging.getLogger("ppocr").setLevel(logging.WARNING)
+        ocr = PaddleOCR(lang=self._lang)
         result = ocr.ocr(image_path, cls=True)
 
         lines: list[str] = []

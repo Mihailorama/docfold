@@ -242,10 +242,56 @@ class EngineRouter:
         engine_hint: str | None = None,
         **kwargs: Any,
     ) -> EngineResult:
-        """Select an engine and process the document."""
-        engine = self.select(file_path, engine_hint=engine_hint, **kwargs)
-        logger.info("Processing '%s' with engine '%s'", file_path, engine.name)
-        return await engine.process(file_path, output_format=output_format, **kwargs)
+        """Select an engine and process the document.
+
+        If the selected engine fails and no explicit ``engine_hint`` was
+        given, the router automatically tries the remaining engines from the
+        priority chain before raising an error.
+        """
+        # When an explicit hint is given, fail immediately — no fallback.
+        if engine_hint:
+            engine = self.select(file_path, engine_hint=engine_hint, **kwargs)
+            logger.info("Processing '%s' with engine '%s' (explicit)", file_path, engine.name)
+            return await engine.process(file_path, output_format=output_format, **kwargs)
+
+        # Build ordered candidate list
+        ext = Path(file_path).suffix.lstrip(".").lower()
+        candidates: list[DocumentEngine] = []
+        seen: set[str] = set()
+        for name in self._get_priority(ext):
+            engine = self._engines.get(name)
+            if engine and engine.name not in seen and self._is_candidate(engine, ext):
+                candidates.append(engine)
+                seen.add(engine.name)
+        # Also include any registered engine not already in the list
+        for engine in self._engines.values():
+            if engine.name not in seen and self._is_candidate(engine, ext):
+                candidates.append(engine)
+                seen.add(engine.name)
+
+        if not candidates:
+            raise ValueError(
+                f"No available engine supports '.{ext}'. "
+                f"Registered: {list(self._engines.keys())}"
+            )
+
+        errors: list[tuple[str, Exception]] = []
+        for engine in candidates:
+            try:
+                logger.info("Processing '%s' with engine '%s'", file_path, engine.name)
+                return await engine.process(file_path, output_format=output_format, **kwargs)
+            except Exception as exc:
+                logger.warning(
+                    "Engine '%s' failed on '%s': %s — trying next engine",
+                    engine.name, file_path, exc,
+                )
+                errors.append((engine.name, exc))
+
+        # All candidates exhausted
+        err_summary = "; ".join(f"{name}: {exc}" for name, exc in errors)
+        raise RuntimeError(
+            f"All engines failed for '{file_path}'. Errors: {err_summary}"
+        )
 
     # ------------------------------------------------------------------
     # Batch processing

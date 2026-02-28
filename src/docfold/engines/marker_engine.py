@@ -180,8 +180,10 @@ class MarkerEngine(DocumentEngine):
         headers = {"X-Api-Key": self._api_key}
 
         with open(file_path, "rb") as f:
+            import mimetypes
+            mime_type = mimetypes.guess_type(file_path)[0] or "application/octet-stream"
             form_data: dict[str, Any] = {
-                "file": (Path(file_path).name, f, "application/octet-stream"),
+                "file": (Path(file_path).name, f, mime_type),
                 "output_format": (None, marker_fmt),
             }
             # Add all Marker params to the form data

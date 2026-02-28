@@ -259,15 +259,15 @@ class EngineRouter:
         candidates: list[DocumentEngine] = []
         seen: set[str] = set()
         for name in self._get_priority(ext):
-            engine = self._engines.get(name)
-            if engine and engine.name not in seen and self._is_candidate(engine, ext):
-                candidates.append(engine)
-                seen.add(engine.name)
+            eng = self._engines.get(name)
+            if eng and eng.name not in seen and self._is_candidate(eng, ext):
+                candidates.append(eng)
+                seen.add(eng.name)
         # Also include any registered engine not already in the list
-        for engine in self._engines.values():
-            if engine.name not in seen and self._is_candidate(engine, ext):
-                candidates.append(engine)
-                seen.add(engine.name)
+        for eng in self._engines.values():
+            if eng.name not in seen and self._is_candidate(eng, ext):
+                candidates.append(eng)
+                seen.add(eng.name)
 
         if not candidates:
             raise ValueError(

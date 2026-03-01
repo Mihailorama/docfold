@@ -138,20 +138,61 @@ class DoclingServeEngine(DocumentEngine):
 
         mime_type = mimetypes.guess_type(file_path)[0] or "application/octet-stream"
 
-        with open(file_path, "rb") as f:
-            files = [("files", (Path(file_path).name, f, mime_type))]
-            data: dict[str, Any] = {
-                "to_formats": [ds_fmt],
-                "do_ocr": str(do_ocr).lower(),
-            }
+        # Retry on 503: Cloud Run cold start loads ML models (~60s).
+        # Health endpoint returns 200 while models are still loading,
+        # so we must retry the actual convert request.
+        # Budget: up to 90s for cold-start retries (separate from
+        # the request timeout which covers actual processing).
+        cold_start_deadline = time.monotonic() + 90
+        attempt = 0
+        retry_delays = [10, 15, 20, 30]  # seconds between 503 retries
 
-            resp = requests.post(
-                f"{self._base_url}/v1/convert/file",
-                files=files,
-                data=data,
-                headers=headers,
-                timeout=timeout,
+        while True:
+            attempt += 1
+            with open(file_path, "rb") as f:
+                files = [("files", (Path(file_path).name, f, mime_type))]
+                data: dict[str, Any] = {
+                    "to_formats": [ds_fmt],
+                    "do_ocr": str(do_ocr).lower(),
+                }
+
+                try:
+                    resp = requests.post(
+                        f"{self._base_url}/v1/convert/file",
+                        files=files,
+                        data=data,
+                        headers=headers,
+                        timeout=timeout,
+                    )
+                except (requests.Timeout, requests.ConnectionError) as exc:
+                    remaining = cold_start_deadline - time.monotonic()
+                    if remaining <= 0:
+                        raise
+                    delay = retry_delays[min(attempt - 1, len(retry_delays) - 1)]
+                    delay = min(delay, remaining)
+                    logger.warning(
+                        "docling_serve connection error (attempt %d, %.0fs left): %s "
+                        "- retrying in %ds",
+                        attempt, remaining, exc, delay,
+                    )
+                    time.sleep(delay)
+                    continue
+
+            if resp.status_code != 503:
+                break
+
+            remaining = cold_start_deadline - time.monotonic()
+            if remaining <= 0:
+                break
+
+            delay = retry_delays[min(attempt - 1, len(retry_delays) - 1)]
+            delay = min(delay, remaining)
+            logger.warning(
+                "docling_serve 503 (model loading, attempt %d, %.0fs left) "
+                "- retrying in %ds",
+                attempt, remaining, delay,
             )
+            time.sleep(delay)
 
         resp.raise_for_status()
         result = resp.json()
@@ -164,6 +205,7 @@ class DoclingServeEngine(DocumentEngine):
             "status": result.get("status"),
             "processing_time": result.get("processing_time"),
             "docling_serve_url": self._base_url,
+            "cold_start_attempts": attempt,
         }
 
         return content, pages, meta

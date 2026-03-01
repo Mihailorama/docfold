@@ -551,6 +551,100 @@ class TestEngineCapabilities:
             assert isinstance(caps, EngineCapabilities)
 
 
+class TestDoclingServeEngine:
+    def test_name(self):
+        from docfold.engines.docling_serve_engine import DoclingServeEngine
+        e = DoclingServeEngine()
+        assert e.name == "docling_serve"
+
+    def test_supported_extensions(self):
+        from docfold.engines.docling_serve_engine import DoclingServeEngine
+        e = DoclingServeEngine()
+        exts = e.supported_extensions
+        assert "pdf" in exts
+        assert "docx" in exts
+        assert "png" in exts
+        assert "html" in exts
+
+    def test_is_available_without_url(self):
+        from docfold.engines.docling_serve_engine import DoclingServeEngine
+        with patch.dict("os.environ", {}, clear=True):
+            e = DoclingServeEngine(base_url="")
+            assert e.is_available() is False
+
+    def test_is_available_with_url(self):
+        import types
+
+        from docfold.engines.docling_serve_engine import DoclingServeEngine
+        e = DoclingServeEngine(base_url="https://docling.example.com")
+        with patch.dict("sys.modules", {"requests": types.ModuleType("requests")}):
+            assert e.is_available() is True
+
+    def test_config_stored(self):
+        from docfold.engines.docling_serve_engine import DoclingServeEngine
+        e = DoclingServeEngine(
+            base_url="https://test.example.com",
+            api_key="secret",
+            do_ocr=False,
+            timeout=120,
+        )
+        assert e._base_url == "https://test.example.com"
+        assert e._api_key == "secret"
+        assert e._do_ocr is False
+        assert e._timeout == 120
+
+    def test_capabilities(self):
+        from docfold.engines.docling_serve_engine import DoclingServeEngine
+        caps = DoclingServeEngine().capabilities
+        assert isinstance(caps, EngineCapabilities)
+        assert caps.images is True
+        assert caps.table_structure is True
+        assert caps.heading_detection is True
+        assert caps.reading_order is True
+
+    @pytest.mark.asyncio
+    async def test_process_html(self):
+        from unittest.mock import MagicMock
+
+        from docfold.engines.base import OutputFormat
+        from docfold.engines.docling_serve_engine import DoclingServeEngine
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.raise_for_status = MagicMock()
+        mock_response.json.return_value = {
+            "document": {
+                "html_content": "<p>OCR result</p>",
+                "num_pages": 2,
+            },
+            "status": "success",
+            "processing_time": 5.2,
+        }
+
+        e = DoclingServeEngine(base_url="https://test.example.com")
+
+        import tempfile
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+            f.write(b"%PDF-1.4 fake")
+            tmp_path = f.name
+
+        try:
+            with patch("requests.post", return_value=mock_response) as mock_post:
+                result = await e.process(tmp_path, output_format=OutputFormat.HTML)
+
+                assert result.content == "<p>OCR result</p>"
+                assert result.engine_name == "docling_serve"
+                assert result.format == OutputFormat.HTML
+                assert result.pages == 2
+                assert result.processing_time_ms > 0
+
+                call_args = mock_post.call_args
+                assert "/v1/convert/file" in call_args[0][0]
+        finally:
+            import os
+            os.unlink(tmp_path)
+
+
 class TestAllEnginesImplementInterface:
     """Verify every adapter satisfies the DocumentEngine ABC."""
 
@@ -571,6 +665,7 @@ class TestAllEnginesImplementInterface:
         "docfold.engines.azure_docint_engine.AzureDocIntEngine",
         "docfold.engines.nougat_engine.NougatEngine",
         "docfold.engines.surya_engine.SuryaEngine",
+        "docfold.engines.docling_serve_engine.DoclingServeEngine",
     ])
     def test_has_required_attributes(self, engine_cls_path):
         module_path, cls_name = engine_cls_path.rsplit(".", 1)
@@ -578,7 +673,13 @@ class TestAllEnginesImplementInterface:
         mod = importlib.import_module(module_path)
         cls = getattr(mod, cls_name)
         _needs_key = {"MarkerEngine", "LlamaParseEngine", "MistralOCREngine"}
-        engine = cls(api_key="test") if cls_name in _needs_key else cls()
+        _needs_url = {"DoclingServeEngine"}
+        if cls_name in _needs_key:
+            engine = cls(api_key="test")
+        elif cls_name in _needs_url:
+            engine = cls(base_url="https://test.example.com")
+        else:
+            engine = cls()
 
         assert isinstance(engine.name, str)
         assert len(engine.name) > 0

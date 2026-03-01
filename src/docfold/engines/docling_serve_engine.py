@@ -169,7 +169,7 @@ class DoclingServeEngine(DocumentEngine):
                     if remaining <= 0:
                         raise
                     delay = retry_delays[min(attempt - 1, len(retry_delays) - 1)]
-                    delay = min(delay, remaining)
+                    delay = int(min(delay, remaining))
                     logger.warning(
                         "docling_serve connection error (attempt %d, %.0fs left): %s "
                         "- retrying in %ds",
@@ -186,7 +186,7 @@ class DoclingServeEngine(DocumentEngine):
                 break
 
             delay = retry_delays[min(attempt - 1, len(retry_delays) - 1)]
-            delay = min(delay, remaining)
+            delay = int(min(delay, remaining))
             logger.warning(
                 "docling_serve 503 (model loading, attempt %d, %.0fs left) "
                 "- retrying in %ds",

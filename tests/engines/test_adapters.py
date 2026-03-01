@@ -604,6 +604,7 @@ class TestDoclingServeEngine:
 
     @pytest.mark.asyncio
     async def test_process_html(self):
+        pytest.importorskip("requests")
         from unittest.mock import MagicMock
 
         from docfold.engines.base import OutputFormat

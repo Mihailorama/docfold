@@ -214,19 +214,24 @@ class MarkerEngine(DocumentEngine):
                 content = result.get(marker_fmt, "")
                 images = result.get("images")
 
-                # Extract bounding boxes from Marker's structured response
+                # Extract bounding boxes from Marker's structured JSON tree.
+                # The `json` field is always present regardless of output_format.
+                # Structure: json -> children[Page] -> children[Table|Text|Picture|...]
+                # Each node has: bbox [x0,y0,x1,y1], block_type, id, polygon, html
                 bboxes: list[dict[str, Any]] = []
-                for page in result.get("pages") or []:
-                    page_num = page.get("page_number") or page.get("number") or 0
-                    for idx, block in enumerate(page.get("blocks") or []):
-                        bbox_raw = block.get("bbox") or block.get("bounding_box")
+                json_tree = result.get("json") or {}
+                for page_idx, page_node in enumerate(json_tree.get("children") or []):
+                    page_num = page_idx + 1
+                    for idx, block in enumerate(page_node.get("children") or []):
+                        bbox_raw = block.get("bbox")
                         if bbox_raw:
                             bboxes.append({
-                                "type": block.get("type", "text"),
+                                "type": block.get("block_type", "Text"),
                                 "bbox": bbox_raw,
                                 "page": page_num,
-                                "text": block.get("text", ""),
+                                "text": block.get("html", ""),
                                 "id": block.get("id") or f"p{page_num}-b{idx}",
+                                "polygon": block.get("polygon"),
                             })
 
                 meta = {

@@ -95,6 +95,9 @@ surya = [
     "torch>=2.0",
     "Pillow>=10.0",
 ]
+firecrawl = [
+    "firecrawl-py>=1.0",
+]
 evaluation = [
     "jiwer>=3.0",          # WER/CER computation
     "numpy>=1.23",
@@ -103,7 +106,7 @@ evaluation = [
     "psutil>=5.9",         # Memory measurement
 ]
 all = [
-    "docfold[docling,mineru,marker,pymupdf,paddleocr,tesseract,easyocr,unstructured,llamaparse,mistral-ocr,textract,google-docai,azure-docint,nougat,surya,evaluation]",
+    "docfold[docling,mineru,marker,pymupdf,paddleocr,tesseract,easyocr,unstructured,llamaparse,mistral-ocr,textract,google-docai,azure-docint,nougat,surya,firecrawl,evaluation]",
     # Note: zerox excluded from [all] — py-zerox requires Python 3.11+
     # Install separately: pip install docfold[zerox]
 ]

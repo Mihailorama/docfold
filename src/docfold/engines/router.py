@@ -45,9 +45,9 @@ _EXTENSION_PRIORITY: dict[str, list[str]] = {
     "odp":  ["marker", "unstructured"],
     "ods":  ["marker", "unstructured"],
     # --- Web / markup ---
-    "html": ["docling", "unstructured", "marker", "azure_docint"],
-    "htm":  ["docling", "unstructured", "marker", "azure_docint"],
-    "xml":  ["unstructured"],
+    "html": ["docling", "firecrawl", "unstructured", "marker", "azure_docint"],
+    "htm":  ["docling", "firecrawl", "unstructured", "marker", "azure_docint"],
+    "xml":  ["firecrawl", "unstructured"],
     "md":   ["unstructured"],
     "rst":  ["unstructured"],
     "csv":  ["unstructured"],

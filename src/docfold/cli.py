@@ -178,6 +178,12 @@ def _build_router():
     except Exception:
         pass
 
+    try:
+        from docfold.engines.firecrawl_engine import FirecrawlEngine
+        router.register(FirecrawlEngine())
+    except Exception:
+        pass
+
     return router
 
 
@@ -228,15 +234,53 @@ def _cmd_engines() -> None:
 
 async def _cmd_compare(args) -> None:
     from docfold.engines.base import OutputFormat
+    from docfold.utils.quality import QualityThresholds, gibberish_ratio, quality_ok
 
     router = _build_router()
     engine_names = args.engines.split(",") if args.engines else None
 
     results = await router.compare(args.file, OutputFormat.MARKDOWN, engines=engine_names)
 
+    thresholds = QualityThresholds.from_env()
+
+    # --- Quality summary table ---
+    print(f"\n{'=' * 72}")
+    print("Quality Check Summary")
+    print(f"{'=' * 72}")
+    print(
+        f"  {'Engine':<16} {'Quality':>8} {'Length':>8} "
+        f"{'Gibberish':>10} {'Confidence':>11} {'Time':>8}"
+    )
+    print(f"  {'-' * 68}")
+
     for name, result in results.items():
+        passed = quality_ok(result, thresholds)
+        status = "PASS" if passed else "FAIL"
+        length = len(result.content.strip()) if result.content else 0
+        gib = gibberish_ratio(result.content) if result.content else 0.0
+        conf = f"{result.confidence:.2f}" if result.confidence is not None else "—"
+        time_str = f"{result.processing_time_ms}ms"
+        print(
+            f"  {name:<16} {status:>8} {length:>8} "
+            f"{gib:>9.1%} {conf:>11} {time_str:>8}"
+        )
+
+    print(f"  {'-' * 68}")
+    print(
+        f"  Thresholds: min_length={thresholds.min_text_length}, "
+        f"max_gibberish={thresholds.gibberish_ratio_max:.0%}, "
+        f"min_confidence={thresholds.ocr_confidence_min}"
+    )
+
+    # --- Per-engine detailed output ---
+    for name, result in results.items():
+        passed = quality_ok(result, thresholds)
+        quality_tag = " [QUALITY: PASS]" if passed else " [QUALITY: FAIL]"
         print(f"\n{'=' * 60}")
-        print(f"Engine: {name} | Time: {result.processing_time_ms}ms | Pages: {result.pages}")
+        print(
+            f"Engine: {name} | Time: {result.processing_time_ms}ms "
+            f"| Pages: {result.pages}{quality_tag}"
+        )
         print(f"{'=' * 60}")
         # Print first 500 chars of content as preview
         preview = result.content[:500]

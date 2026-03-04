@@ -646,6 +646,56 @@ class TestDoclingServeEngine:
             os.unlink(tmp_path)
 
 
+class TestFirecrawlEngine:
+    def test_name(self):
+        from docfold.engines.firecrawl_engine import FirecrawlEngine
+        e = FirecrawlEngine()
+        assert e.name == "firecrawl"
+
+    def test_supported_extensions(self):
+        from docfold.engines.firecrawl_engine import FirecrawlEngine
+        e = FirecrawlEngine()
+        exts = e.supported_extensions
+        assert "html" in exts
+        assert "htm" in exts
+        assert "xml" in exts
+
+    def test_is_available_without_key(self):
+        from docfold.engines.firecrawl_engine import FirecrawlEngine
+        with patch.dict("os.environ", {}, clear=True):
+            e = FirecrawlEngine(api_key=None)
+            assert e.is_available() is False
+
+    def test_is_available_with_key(self):
+        import types
+
+        from docfold.engines.firecrawl_engine import FirecrawlEngine
+        e = FirecrawlEngine(api_key="fc-test-key")
+        with patch.dict("sys.modules", {"firecrawl": types.ModuleType("firecrawl")}):
+            assert e.is_available() is True
+
+    def test_config_stored(self):
+        from docfold.engines.firecrawl_engine import FirecrawlEngine
+        e = FirecrawlEngine(
+            api_key="fc-key",
+            api_url="https://custom.firecrawl.dev",
+            timeout=60,
+        )
+        assert e._api_key == "fc-key"
+        assert e._api_url == "https://custom.firecrawl.dev"
+        assert e._timeout == 60
+
+    def test_capabilities(self):
+        from docfold.engines.firecrawl_engine import FirecrawlEngine
+        caps = FirecrawlEngine().capabilities
+        assert isinstance(caps, EngineCapabilities)
+        assert caps.table_structure is True
+        assert caps.heading_detection is True
+        assert caps.bounding_boxes is False
+        assert caps.confidence is False
+        assert caps.images is False
+
+
 class TestAllEnginesImplementInterface:
     """Verify every adapter satisfies the DocumentEngine ABC."""
 
@@ -667,13 +717,14 @@ class TestAllEnginesImplementInterface:
         "docfold.engines.nougat_engine.NougatEngine",
         "docfold.engines.surya_engine.SuryaEngine",
         "docfold.engines.docling_serve_engine.DoclingServeEngine",
+        "docfold.engines.firecrawl_engine.FirecrawlEngine",
     ])
     def test_has_required_attributes(self, engine_cls_path):
         module_path, cls_name = engine_cls_path.rsplit(".", 1)
         import importlib
         mod = importlib.import_module(module_path)
         cls = getattr(mod, cls_name)
-        _needs_key = {"MarkerEngine", "LlamaParseEngine", "MistralOCREngine"}
+        _needs_key = {"MarkerEngine", "LlamaParseEngine", "MistralOCREngine", "FirecrawlEngine"}
         _needs_url = {"DoclingServeEngine"}
         if cls_name in _needs_key:
             engine = cls(api_key="test")

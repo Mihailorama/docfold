@@ -824,7 +824,6 @@ class TestFirecrawlEngine:
     @pytest.mark.asyncio
     async def test_process_pdf(self):
         """Firecrawl should handle PDF files via urllib POST."""
-        import io
         import json
         from unittest.mock import MagicMock
 

@@ -8,6 +8,33 @@ import pytest
 from docfold.engines.base import EngineResult, OutputFormat
 
 
+def _make_liteparse_json(pages: list[dict]) -> str:
+    """Build a JSON string matching the real LiteParse CLI output format."""
+    return json.dumps({"pages": pages})
+
+
+def _simple_page(
+    page: int = 1,
+    text: str = "Hello",
+    text_items: list[dict] | None = None,
+    width: int = 612,
+    height: int = 792,
+) -> dict:
+    """Build a single page in LiteParse JSON format."""
+    if text_items is None:
+        text_items = [
+            {"text": text, "x": 72, "y": 100, "width": 50, "height": 14},
+        ]
+    return {
+        "page": page,
+        "width": width,
+        "height": height,
+        "text": text,
+        "textItems": text_items,
+        "boundingBoxes": [],
+    }
+
+
 class TestLiteParseEngineMetadata:
     def test_name(self):
         from docfold.engines.liteparse_engine import LiteParseEngine
@@ -73,14 +100,12 @@ class TestLiteParseEngineProcess:
 
         mock_result = MagicMock()
         mock_result.returncode = 0
-        mock_result.stdout = "Hello world\nThis is a test document."
-        mock_result.stderr = ""
+        mock_result.communicate = AsyncMock(
+            return_value=(b"Hello world\nThis is a test document.", b"")
+        )
 
         with patch("asyncio.create_subprocess_exec", new_callable=AsyncMock) as mock_exec:
             mock_exec.return_value = mock_result
-            mock_result.communicate = AsyncMock(
-                return_value=(mock_result.stdout.encode(), b"")
-            )
 
             result = await e.process("test.pdf", output_format=OutputFormat.TEXT)
 
@@ -96,30 +121,19 @@ class TestLiteParseEngineProcess:
 
         e = LiteParseEngine()
 
-        json_output = json.dumps({
-            "pages": [
-                {
-                    "page": 1,
-                    "content": {
-                        "text": "# Title\n\nSome paragraph text.",
-                        "items": [
-                            {
-                                "text": "Title",
-                                "bbox": [10, 20, 200, 50],
-                                "confidence": 0.98,
-                            },
-                            {
-                                "text": "Some paragraph text.",
-                                "bbox": [10, 60, 400, 90],
-                                "confidence": 0.95,
-                            },
-                        ],
-                    },
-                    "width": 612,
-                    "height": 792,
-                }
-            ]
-        })
+        json_output = _make_liteparse_json([
+            {
+                "page": 1,
+                "width": 612,
+                "height": 792,
+                "text": "# Title\n\nSome paragraph text.",
+                "textItems": [
+                    {"text": "Title", "x": 10, "y": 20, "width": 190, "height": 30},
+                    {"text": "Some paragraph text.", "x": 10, "y": 60, "width": 390, "height": 30},
+                ],
+                "boundingBoxes": [],
+            }
+        ])
 
         mock_result = MagicMock()
         mock_result.returncode = 0
@@ -145,19 +159,7 @@ class TestLiteParseEngineProcess:
 
         e = LiteParseEngine()
 
-        json_output = json.dumps({
-            "pages": [
-                {
-                    "page": 1,
-                    "content": {
-                        "text": "Test content",
-                        "items": [],
-                    },
-                    "width": 612,
-                    "height": 792,
-                }
-            ]
-        })
+        json_output = _make_liteparse_json([_simple_page(text="Test content")])
 
         mock_result = MagicMock()
         mock_result.returncode = 0
@@ -206,7 +208,6 @@ class TestLiteParseEngineProcess:
             mock_exec.return_value = mock_result
             await e.process("test.pdf", output_format=OutputFormat.TEXT)
 
-            # Verify --no-ocr flag is passed
             call_args = mock_exec.call_args
             assert "--no-ocr" in call_args[0]
 
@@ -229,30 +230,29 @@ class TestLiteParseEngineProcess:
             assert "300" in call_args[0]
 
     @pytest.mark.asyncio
-    async def test_bounding_boxes_extraction(self):
+    async def test_bounding_boxes_from_text_items(self):
         from docfold.engines.liteparse_engine import LiteParseEngine
 
         e = LiteParseEngine()
 
-        json_output = json.dumps({
-            "pages": [
-                {
-                    "page": 1,
-                    "content": {
+        json_output = _make_liteparse_json([
+            {
+                "page": 1,
+                "width": 612,
+                "height": 792,
+                "text": "Hello",
+                "textItems": [
+                    {
                         "text": "Hello",
-                        "items": [
-                            {
-                                "text": "Hello",
-                                "bbox": [10.0, 20.0, 100.0, 40.0],
-                                "confidence": 0.97,
-                            }
-                        ],
-                    },
-                    "width": 612,
-                    "height": 792,
-                }
-            ]
-        })
+                        "x": 10.0,
+                        "y": 20.0,
+                        "width": 90.0,
+                        "height": 20.0,
+                    }
+                ],
+                "boundingBoxes": [],
+            }
+        ])
 
         mock_result = MagicMock()
         mock_result.returncode = 0
@@ -267,8 +267,34 @@ class TestLiteParseEngineProcess:
 
             assert result.bounding_boxes is not None
             bbox = result.bounding_boxes[0]
+            # bbox should be [x, y, x+width, y+height]
             assert bbox["bbox"] == [10.0, 20.0, 100.0, 40.0]
             assert bbox["text"] == "Hello"
             assert bbox["page"] == 1
             assert bbox["page_width"] == 612
             assert bbox["page_height"] == 792
+
+    @pytest.mark.asyncio
+    async def test_extract_json_with_log_prefix(self):
+        """LiteParse CLI may output log lines before JSON."""
+        from docfold.engines.liteparse_engine import LiteParseEngine
+
+        e = LiteParseEngine()
+
+        raw_json = _make_liteparse_json([_simple_page(text="Test")])
+        # Simulate log lines before JSON
+        prefixed = f"Processing file: test.pdf\nLoaded PDF with 1 pages\n{raw_json}"
+
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.communicate = AsyncMock(
+            return_value=(prefixed.encode(), b"")
+        )
+
+        with patch("asyncio.create_subprocess_exec", new_callable=AsyncMock) as mock_exec:
+            mock_exec.return_value = mock_result
+
+            result = await e.process("test.pdf", output_format=OutputFormat.MARKDOWN)
+
+            assert result.content == "Test"
+            assert result.pages == 1

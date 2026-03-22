@@ -1,0 +1,123 @@
+{
+  "benchmark_date": "2026-03-22 14:07:03",
+  "engines": [
+    "pymupdf",
+    "liteparse"
+  ],
+  "documents": [
+    {
+      "name": "simple_text",
+      "pages": 1,
+      "category": "invoice"
+    },
+    {
+      "name": "multi_page",
+      "pages": 2,
+      "category": "report"
+    },
+    {
+      "name": "dense_financial",
+      "pages": 1,
+      "category": "financial"
+    },
+    {
+      "name": "mixed_formatting",
+      "pages": 1,
+      "category": "report"
+    }
+  ],
+  "summary": {
+    "pymupdf": {
+      "avg_time_ms": 4.5,
+      "avg_cer": 0.0,
+      "avg_wer": 0.0,
+      "avg_bbox_count": 6.2,
+      "errors": 0,
+      "successes": 4,
+      "results": [
+        {
+          "doc": "simple_text",
+          "time_ms": 10,
+          "cer": 0.0,
+          "wer": 0.0,
+          "bbox_count": 5,
+          "content_length": 121,
+          "pages": 1
+        },
+        {
+          "doc": "multi_page",
+          "time_ms": 3,
+          "cer": 0.0,
+          "wer": 0.0,
+          "bbox_count": 4,
+          "content_length": 300,
+          "pages": 2
+        },
+        {
+          "doc": "dense_financial",
+          "time_ms": 3,
+          "cer": 0.0,
+          "wer": 0.0,
+          "bbox_count": 10,
+          "content_length": 298,
+          "pages": 1
+        },
+        {
+          "doc": "mixed_formatting",
+          "time_ms": 2,
+          "cer": 0.0,
+          "wer": 0.0,
+          "bbox_count": 6,
+          "content_length": 260,
+          "pages": 1
+        }
+      ]
+    },
+    "liteparse": {
+      "avg_time_ms": 382.0,
+      "avg_cer": 0.0,
+      "avg_wer": 0.0,
+      "avg_bbox_count": 31.8,
+      "errors": 0,
+      "successes": 4,
+      "results": [
+        {
+          "doc": "simple_text",
+          "time_ms": 426,
+          "cer": 0.0,
+          "wer": 0.0,
+          "bbox_count": 18,
+          "content_length": 121,
+          "pages": 1
+        },
+        {
+          "doc": "multi_page",
+          "time_ms": 359,
+          "cer": 0.0,
+          "wer": 0.0,
+          "bbox_count": 39,
+          "content_length": 300,
+          "pages": 2
+        },
+        {
+          "doc": "dense_financial",
+          "time_ms": 364,
+          "cer": 0.0,
+          "wer": 0.0,
+          "bbox_count": 33,
+          "content_length": 298,
+          "pages": 1
+        },
+        {
+          "doc": "mixed_formatting",
+          "time_ms": 379,
+          "cer": 0.0,
+          "wer": 0.0,
+          "bbox_count": 37,
+          "content_length": 260,
+          "pages": 1
+        }
+      ]
+    }
+  }
+}

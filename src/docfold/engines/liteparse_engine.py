@@ -142,13 +142,23 @@ class LiteParseEngine(DocumentEngine):
 
         return cmd
 
+    @staticmethod
+    def _extract_json(raw: str) -> str:
+        """Extract JSON object from raw output that may contain log lines."""
+        # The CLI may print log/progress lines before the JSON.
+        # Find the first '{' that starts the JSON object.
+        idx = raw.find("{")
+        if idx == -1:
+            return raw
+        return raw[idx:]
+
     def _parse_json_output(
         self,
         raw: str,
         output_format: OutputFormat,
         elapsed_ms: int,
     ) -> EngineResult:
-        data = json.loads(raw)
+        data = json.loads(self._extract_json(raw))
         pages = data.get("pages", [])
 
         texts: list[str] = []
@@ -156,20 +166,26 @@ class LiteParseEngine(DocumentEngine):
 
         for page_data in pages:
             page_num = page_data.get("page", 1)
-            content_block = page_data.get("content", {})
-            page_text = content_block.get("text", "")
+            # LiteParse uses "text" at page level (not nested in "content")
+            page_text = page_data.get("text", "")
             texts.append(page_text)
 
             pw = page_data.get("width")
             ph = page_data.get("height")
 
-            for idx, item in enumerate(content_block.get("items", [])):
+            # LiteParse provides "textItems" with {text, x, y, width, height}
+            # and "boundingBoxes" with {x1, y1, x2, y2}
+            for idx, item in enumerate(page_data.get("textItems", [])):
+                x = item.get("x", 0)
+                y = item.get("y", 0)
+                w = item.get("width", 0)
+                h = item.get("height", 0)
                 bboxes.append(
                     BoundingBox(
                         type="Text",
-                        bbox=item.get("bbox", []),
+                        bbox=[x, y, x + w, y + h],
                         page=page_num,
-                        text=item.get("text", ""),
+                        text=item.get("text", "").strip(),
                         id=f"p{page_num}-i{idx}",
                         confidence=item.get("confidence"),
                         page_width=pw,

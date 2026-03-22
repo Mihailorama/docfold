@@ -8,6 +8,8 @@
 
 **Turn any document into structured data.** Unified Python toolkit for document structuring — one interface, 16 engines, built-in benchmarks.
 
+Docfold is the open-source extraction engine from [Datatera.ai](https://datatera.ai) — extracted from our commercial enterprise AI data platform and battle-tested in production with enterprise clients across finance, insurance, and mining.
+
 > Read the announcement: [Docfold - open-source document processing toolkit](https://datatera.ai/blog/docfold-open-source)
 
 ## Engine Comparison

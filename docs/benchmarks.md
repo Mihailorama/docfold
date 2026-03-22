@@ -17,6 +17,7 @@ This guide helps you choose the right document processing engine for your use ca
 | **EasyOCR** | Local | Apache-2.0 | ★☆☆ | ★★★ | ☆☆☆ | ☆☆☆ | ★★★ (80+) | Medium | Free |
 | **Unstructured** | Local/SaaS | Apache-2.0 | ★★☆ | ★★☆ | ★★☆ | ★☆☆ | ★★☆ | Medium | Free / Paid API |
 | **LlamaParse** | SaaS | Paid | ★★★ | ★★★ | ★★★ | ★★★ | ★★☆ | Fast | ~$3/1K pages |
+| **LiteParse** | Local | Apache-2.0 | ★★★ | ★★☆ | ★★☆ | ☆☆☆ | ★★☆ | Fast | Free |
 | **Mistral OCR** | SaaS | Paid | ★★★ | ★★★ | ★★★ | ★★★ | ★★★ | Fast | ~$1/1K pages |
 | **Zerox** | VLM | MIT | ★★★ | ★★★ | ★★☆ | ★★☆ | ★★★ | Slow | VLM API cost |
 | **Nougat** | Local | MIT | ★★★ | ★★☆ | ★★☆ | ★★★ | ★☆☆ | Slow | Free |
@@ -122,6 +123,16 @@ This guide helps you choose the right document processing engine for your use ca
 - **Cost:** Free tier: 1000 pages/day. Paid: ~$3/1000 pages.
 - **Install:** `pip install docfold[llamaparse]`
 - **Links:** [Docs](https://docs.llamaindex.ai/en/stable/llama_cloud/llama_parse/)
+
+### LiteParse (LlamaIndex)
+
+**Best for:** Fast local PDF parsing with bounding boxes, no cloud dependencies.
+
+- **Strengths:** Fast, lightweight local parser built on PDF.js. Bounding boxes with confidence scores. Wide format support (PDF, Office, images) via LibreOffice conversion. Flexible OCR integration (Tesseract.js built-in, or connect PaddleOCR/EasyOCR servers). Apache 2.0 license. No API key required.
+- **Weaknesses:** Requires Node.js 18+. No formula recognition. Table extraction is basic (no cell-level structure). Non-Python — runs as subprocess. Needs LibreOffice for non-PDF formats.
+- **GPU:** Not needed.
+- **Install:** `npm i -g @llamaindex/liteparse` then `pip install docfold[liteparse]`
+- **Links:** [GitHub](https://github.com/run-llama/liteparse)
 
 ### Mistral OCR
 
@@ -231,6 +242,7 @@ Capabilities each engine can populate in `EngineResult`:
 | Tesseract | — | — | — | — | — | — |
 | Unstructured | — | — | — | ✅ | ✅ | — |
 | LlamaParse | — | — | — | ✅ | ✅ | — |
+| LiteParse | ✅ | ✅ | — | — | — | — |
 | Mistral OCR | — | — | — | ✅ | ✅ | — |
 | Zerox | — | — | — | — | — | — |
 | **Textract** | ✅ | ✅ | — | ✅ | — | ✅ |
@@ -263,6 +275,7 @@ Capabilities each engine can populate in `EngineResult`:
 | Tesseract | ✅* | — | — | — | — | ✅ | — | — | — |
 | Unstructured | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | ✅ |
 | LlamaParse | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | — | ✅ |
+| LiteParse | ✅ | ✅ | ✅ | ✅ | — | ✅ | — | — | — |
 | Mistral OCR | ✅ | — | — | — | — | ✅ | — | — | — |
 | Zerox | ✅ | — | — | — | — | ✅ | — | — | — |
 | **Textract** | ✅ | — | — | — | — | ✅ | — | — | — |
@@ -290,6 +303,7 @@ Capabilities each engine can populate in `EngineResult`:
 | Unstructured (hi_res) | 8 GB | 16 GB | Optional | ~2 GB |
 | Nougat | 8 GB | 16 GB | CUDA 8+ GB | ~1.5 GB |
 | Surya | 4 GB | 8 GB | Optional | ~1 GB |
+| LiteParse | 512 MB | 1 GB | — | ~100 MB (Node.js) |
 
 
 *SaaS engines (LlamaParse, Mistral OCR, Zerox, Marker API, Textract, Google DocAI, Azure DocInt) have no local hardware requirements.*
@@ -311,6 +325,7 @@ Capabilities each engine can populate in `EngineResult`:
 | Marker API | SaaS | ~$1 |
 | Mistral OCR | SaaS | ~$1 (token-based) |
 | LlamaParse | SaaS | ~$3 (free: 1K/day) |
+| LiteParse | Free | $0 (Node.js runtime) |
 | AWS Textract | SaaS | ~$1.50 |
 | Google Doc AI | SaaS | ~$1.50 |
 | Azure Doc Intel | SaaS | ~$1.50 |

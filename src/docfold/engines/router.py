@@ -23,25 +23,25 @@ logger = logging.getLogger(__name__)
 # the first *available* engine that supports the extension.
 
 _IMAGE_PRIORITY = [
-    "surya", "paddleocr", "tesseract", "easyocr", "docling", "mistral_ocr",
-    "google_docai", "textract", "azure_docint", "zerox", "marker",
+    "surya", "paddleocr", "tesseract", "easyocr", "docling", "liteparse",
+    "mistral_ocr", "google_docai", "textract", "azure_docint", "zerox", "marker",
 ]
 
 _EXTENSION_PRIORITY: dict[str, list[str]] = {
     # --- PDF ---
     "pdf": [
         "docling", "mineru", "unstructured", "marker",
-        "llamaparse", "mistral_ocr", "firecrawl", "google_docai", "azure_docint",
-        "textract", "zerox", "nougat", "surya", "pymupdf", "paddleocr", "tesseract",
-        "easyocr",
+        "llamaparse", "liteparse", "mistral_ocr", "firecrawl", "google_docai",
+        "azure_docint", "textract", "zerox", "nougat", "surya", "pymupdf",
+        "paddleocr", "tesseract", "easyocr",
     ],
     # --- Office ---
-    "docx": ["docling", "marker", "unstructured", "llamaparse", "firecrawl", "azure_docint"],
-    "doc":  ["docling", "marker", "unstructured", "llamaparse", "azure_docint"],
-    "pptx": ["docling", "marker", "unstructured", "llamaparse", "azure_docint"],
-    "ppt":  ["docling", "marker", "unstructured", "llamaparse", "azure_docint"],
-    "xlsx": ["docling", "marker", "unstructured", "llamaparse", "azure_docint"],
-    "xls":  ["docling", "marker", "unstructured", "llamaparse", "azure_docint"],
+    "docx": ["docling", "marker", "unstructured", "llamaparse", "liteparse", "firecrawl", "azure_docint"],
+    "doc":  ["docling", "marker", "unstructured", "llamaparse", "liteparse", "azure_docint"],
+    "pptx": ["docling", "marker", "unstructured", "llamaparse", "liteparse", "azure_docint"],
+    "ppt":  ["docling", "marker", "unstructured", "llamaparse", "liteparse", "azure_docint"],
+    "xlsx": ["docling", "marker", "unstructured", "llamaparse", "liteparse", "azure_docint"],
+    "xls":  ["docling", "marker", "unstructured", "llamaparse", "liteparse", "azure_docint"],
     "odt":  ["marker", "unstructured"],
     "odp":  ["marker", "unstructured"],
     "ods":  ["marker", "unstructured"],
@@ -74,8 +74,9 @@ _EXTENSION_PRIORITY: dict[str, list[str]] = {
 # Ultimate fallback when extension is unknown or missing from the map.
 _DEFAULT_FALLBACK = [
     "docling", "mineru", "unstructured", "marker",
-    "llamaparse", "mistral_ocr", "google_docai", "azure_docint", "textract",
-    "zerox", "nougat", "surya", "pymupdf", "paddleocr", "tesseract", "easyocr",
+    "llamaparse", "liteparse", "mistral_ocr", "google_docai", "azure_docint",
+    "textract", "zerox", "nougat", "surya", "pymupdf", "paddleocr", "tesseract",
+    "easyocr",
 ]
 
 

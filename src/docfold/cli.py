@@ -137,6 +137,12 @@ def _build_router():
         pass
 
     try:
+        from docfold.engines.liteparse_engine import LiteParseEngine
+        router.register(LiteParseEngine())
+    except Exception:
+        pass
+
+    try:
         from docfold.engines.mistral_ocr_engine import MistralOCREngine
         router.register(MistralOCREngine())
     except Exception:

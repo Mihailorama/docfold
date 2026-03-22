@@ -71,6 +71,9 @@ unstructured = [
 llamaparse = [
     "llama-parse>=0.5",
 ]
+liteparse = [
+    # No Python deps — requires Node.js 18+ and: npm i -g @llamaindex/liteparse
+]
 mistral-ocr = [
     "mistralai>=1.0",
 ]
@@ -106,7 +109,7 @@ evaluation = [
     "psutil>=5.9",         # Memory measurement
 ]
 all = [
-    "docfold[docling,mineru,marker,pymupdf,paddleocr,tesseract,easyocr,unstructured,llamaparse,mistral-ocr,textract,google-docai,azure-docint,nougat,surya,firecrawl,evaluation]",
+    "docfold[docling,mineru,marker,pymupdf,paddleocr,tesseract,easyocr,unstructured,llamaparse,liteparse,mistral-ocr,textract,google-docai,azure-docint,nougat,surya,firecrawl,evaluation]",
     # Note: zerox excluded from [all] — py-zerox requires Python 3.11+
     # Install separately: pip install docfold[zerox]
 ]

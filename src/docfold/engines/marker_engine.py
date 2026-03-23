@@ -49,13 +49,17 @@ _DEFAULT_MAX_POLLS = 300
 # Used to filter kwargs before sending to the API.
 _VALID_MARKER_PARAMS = {
     "mode",                     # fast | balanced | accurate
+    "use_llm",                  # bool — LLM for tables, forms, math, image captions
+    "force_ocr",                # bool — force OCR even on text-based PDFs
+    "block_correction_prompt",  # str — optional LLM correction prompt
     "paginate",                 # bool — add page delimiters
     "max_pages",                # int — limit pages processed
     "page_range",               # str — e.g. "0,2-4" (0-indexed)
     "page_schema",              # str — JSON schema for structured extraction
     "segmentation_schema",      # str — schema for auto-segmentation
-    "disable_image_extraction", # bool
+    "disable_image_extraction", # bool — if use_llm=True, images replaced with captions
     "disable_image_captions",   # bool
+    "disable_ocr_math",        # bool — disable inline math recognition
     "add_block_ids",            # bool
     "skip_cache",               # bool
     "save_checkpoint",          # bool

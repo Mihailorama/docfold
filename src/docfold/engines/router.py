@@ -36,7 +36,10 @@ _EXTENSION_PRIORITY: dict[str, list[str]] = {
         "paddleocr", "tesseract", "easyocr",
     ],
     # --- Office ---
-    "docx": ["docling", "marker", "unstructured", "llamaparse", "liteparse", "firecrawl", "azure_docint"],
+    "docx": [
+        "docling", "marker", "unstructured", "llamaparse",
+        "liteparse", "firecrawl", "azure_docint",
+    ],
     "doc":  ["docling", "marker", "unstructured", "llamaparse", "liteparse", "azure_docint"],
     "pptx": ["docling", "marker", "unstructured", "llamaparse", "liteparse", "azure_docint"],
     "ppt":  ["docling", "marker", "unstructured", "llamaparse", "liteparse", "azure_docint"],

@@ -943,6 +943,59 @@ class TestFirecrawlEngine:
             os.unlink(tmp_path)
 
 
+class TestChandraEngine:
+    def test_name(self):
+        from docfold.engines.chandra_engine import ChandraEngine
+        e = ChandraEngine()
+        assert e.name == "chandra"
+
+    def test_supported_extensions(self):
+        from docfold.engines.chandra_engine import ChandraEngine
+        e = ChandraEngine()
+        exts = e.supported_extensions
+        assert "pdf" in exts
+        assert "png" in exts
+        assert "jpg" in exts
+        assert "jpeg" in exts
+        assert "tiff" in exts
+        assert "bmp" in exts
+        assert "webp" in exts
+
+    def test_is_available_when_missing(self):
+        from docfold.engines.chandra_engine import ChandraEngine
+        e = ChandraEngine()
+        with patch.dict("sys.modules", {"chandra": None}):
+            result = e.is_available()
+            assert isinstance(result, bool)
+
+    def test_config_stored(self):
+        from docfold.engines.chandra_engine import ChandraEngine
+        e = ChandraEngine(
+            method="hf",
+            model="datalab-to/chandra-ocr-2",
+            prompt_type="ocr_with_layout",
+            vllm_url="http://localhost:9000",
+        )
+        assert e._method == "hf"
+        assert e._model == "datalab-to/chandra-ocr-2"
+        assert e._prompt_type == "ocr_with_layout"
+        assert e._vllm_url == "http://localhost:9000"
+
+    def test_default_method_is_vllm(self):
+        from docfold.engines.chandra_engine import ChandraEngine
+        e = ChandraEngine()
+        assert e._method == "vllm"
+
+    def test_capabilities(self):
+        from docfold.engines.chandra_engine import ChandraEngine
+        caps = ChandraEngine().capabilities
+        assert caps.table_structure is True
+        assert caps.heading_detection is True
+        assert caps.reading_order is True
+        assert caps.bounding_boxes is False
+        assert caps.confidence is False
+
+
 class TestAllEnginesImplementInterface:
     """Verify every adapter satisfies the DocumentEngine ABC."""
 
@@ -965,6 +1018,7 @@ class TestAllEnginesImplementInterface:
         "docfold.engines.surya_engine.SuryaEngine",
         "docfold.engines.docling_serve_engine.DoclingServeEngine",
         "docfold.engines.firecrawl_engine.FirecrawlEngine",
+        "docfold.engines.chandra_engine.ChandraEngine",
     ])
     def test_has_required_attributes(self, engine_cls_path):
         module_path, cls_name = engine_cls_path.rsplit(".", 1)

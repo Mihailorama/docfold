@@ -173,6 +173,12 @@ def _build_router():
         pass
 
     try:
+        from docfold.engines.chandra_engine import ChandraEngine
+        router.register(ChandraEngine())
+    except Exception:
+        pass
+
+    try:
         from docfold.engines.nougat_engine import NougatEngine
         router.register(NougatEngine())
     except Exception:

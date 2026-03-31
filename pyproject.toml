@@ -93,6 +93,9 @@ nougat = [
     "nougat-ocr>=0.1.17",
     "torch>=2.0",
 ]
+chandra = [
+    "chandra-ocr>=0.1",
+]
 surya = [
     "surya-ocr>=0.6",
     "torch>=2.0",
@@ -109,7 +112,7 @@ evaluation = [
     "psutil>=5.9",         # Memory measurement
 ]
 all = [
-    "docfold[docling,mineru,marker,pymupdf,paddleocr,tesseract,easyocr,unstructured,llamaparse,liteparse,mistral-ocr,textract,google-docai,azure-docint,nougat,surya,firecrawl,evaluation]",
+    "docfold[docling,mineru,marker,pymupdf,paddleocr,tesseract,easyocr,unstructured,llamaparse,liteparse,mistral-ocr,textract,google-docai,azure-docint,nougat,chandra,surya,firecrawl,evaluation]",
     # Note: zerox excluded from [all] — py-zerox requires Python 3.11+
     # Install separately: pip install docfold[zerox]
 ]

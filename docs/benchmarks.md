@@ -10,6 +10,7 @@ This guide helps you choose the right document processing engine for your use ca
 |--------|------|---------|----------|----------|--------|----------|------------|-------|------|
 | **Docling** | Local | MIT | ★★★ | ★★☆ | ★★★ | ★★☆ | ★★★ | Medium | Free |
 | **MinerU** | Local | AGPL-3.0 | ★★★ | ★★★ | ★★★ | ★★★ | ★★☆ | Slow | Free |
+| **Chandra** | Local/VLM | OpenRAIL-M* | ★★★ | ★★★ | ★★★ | ★★★ | ★★★ (90+) | Slow | Free* |
 | **Marker** | SaaS | Paid | ★★★ | ★★★ | ★★★ | ★★☆ | ★★★ | Fast | ~$1/1K pages |
 | **PyMuPDF** | Local | AGPL-3.0 | ★★★ | ☆☆☆ | ★☆☆ | ☆☆☆ | ★★★ | Ultra-fast | Free |
 | **PaddleOCR** | Local | Apache-2.0 | ★☆☆ | ★★★ | ★★☆ | ☆☆☆ | ★★★ (80+) | Medium | Free |
@@ -42,6 +43,17 @@ This guide helps you choose the right document processing engine for your use ca
 - **GPU:** Not required, but speeds up layout analysis.
 - **Install:** `pip install docfold[docling]`
 - **Links:** [GitHub](https://github.com/docling-project/docling) | [Paper](https://arxiv.org/abs/2408.09869)
+
+### Chandra OCR 2 (Datalab)
+
+**Best for:** Highest-accuracy document OCR — handwriting, forms, math, tables, multilingual.
+
+- **Strengths:** State-of-the-art 85.9% olmOCR benchmark score. Excellent handwriting recognition (cursive, notes, forms). 90+ languages at 77.8% multilingual average. Strong table, math/LaTeX, and complex layout handling. Native Markdown/HTML/JSON output. Runs locally via vLLM or HuggingFace.
+- **Weaknesses:** 5B VLM requires significant GPU memory (~16 GB+ VRAM). Slower than rule-based engines (~1.44 pp/s on H100). OpenRAIL-M license restricts commercial use above $2M revenue/funding threshold. Heavy dependencies (torch, transformers, vllm).
+- **GPU:** Required (CUDA). HuggingFace needs ~16 GB VRAM; vLLM benefits from H100/A100.
+- **Cost:** Free for research/personal/startups <$2M. Commercial license required otherwise.
+- **Install:** `pip install docfold[chandra]`
+- **Links:** [GitHub](https://github.com/datalab-to/chandra) | [HuggingFace](https://huggingface.co/datalab-to/chandra-ocr-2) | [Playground](https://www.datalab.to/playground)
 
 ### MinerU / PDF-Extract-Kit (OpenDataLab)
 
@@ -235,6 +247,7 @@ Capabilities each engine can populate in `EngineResult`:
 | Engine | BBox | Confidence | Images | Tables | Headings | Reading Order |
 |--------|:----:|:----------:|:------:|:------:|:--------:|:-------------:|
 | Docling | ✅ | — | ✅ | ✅ | ✅ | ✅ |
+| Chandra | — | — | — | ✅ | ✅ | ✅ |
 | MinerU | — | — | — | ✅ | ✅ | ✅ |
 | Marker | ✅ | — | ✅ | ✅ | ✅ | — |
 | PyMuPDF | — | — | — | — | — | — |
@@ -268,6 +281,7 @@ Capabilities each engine can populate in `EngineResult`:
 | Engine | PDF | DOCX | PPTX | XLSX | HTML | Images | Email | Audio | ePub |
 |--------|-----|------|------|------|------|--------|-------|-------|------|
 | Docling | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | ✅ | — |
+| Chandra | ✅* | — | — | — | — | ✅ | — | — | — |
 | MinerU | ✅ | — | — | — | — | — | — | — | — |
 | Marker | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | — | ✅ |
 | PyMuPDF | ✅ | — | — | — | — | — | — | — | — |
@@ -294,6 +308,7 @@ Capabilities each engine can populate in `EngineResult`:
 | Engine | Min RAM | Recommended RAM | GPU | Disk (models) |
 |--------|---------|-----------------|-----|----------------|
 | Docling | 4 GB | 8 GB | Optional | ~2 GB |
+| Chandra | 16 GB | 32 GB | CUDA 16+ GB | ~10 GB |
 | MinerU | 8 GB | 16 GB | CUDA 8+ GB | ~5 GB |
 | Marker (local) | 4 GB | 8 GB | Optional | ~2 GB |
 | PyMuPDF | 512 MB | 1 GB | — | — |
@@ -320,6 +335,7 @@ Capabilities each engine can populate in `EngineResult`:
 | Docling | Free | $0 (compute only) |
 | Nougat | Free | $0 (compute + GPU) |
 | Surya | Free | $0 (compute only) |
+| Chandra | Free* | $0 (compute + GPU)* |
 | MinerU | Free | $0 (compute + GPU) |
 | Unstructured | Free / API | $0 local / ~$10 API |
 | Marker API | SaaS | ~$1 |

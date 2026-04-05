@@ -65,6 +65,184 @@ class TestMinerUEngine:
         assert e._config_path == "/tmp/cfg.yaml"
         assert e._gpu is True
 
+    def test_capabilities(self):
+        from docfold.engines.mineru_engine import MinerUEngine
+        e = MinerUEngine()
+        caps = e.capabilities
+        assert caps.table_structure is True
+        assert caps.heading_detection is True
+        assert caps.reading_order is True
+        assert caps.bounding_boxes is False
+        assert caps.confidence is False
+
+    def test_is_available_when_installed(self):
+        """When magic_pdf is importable, is_available returns True."""
+        from docfold.engines.mineru_engine import MinerUEngine
+        e = MinerUEngine()
+        # magic_pdf is installed in this env
+        result = e.is_available()
+        assert result is True
+
+    @pytest.mark.asyncio
+    async def test_process_returns_engine_result(self):
+        """MinerU engine processes a PDF and returns a valid EngineResult."""
+        from docfold.engines.mineru_engine import MinerUEngine
+        from docfold.engines.base import EngineResult, OutputFormat
+        from unittest.mock import MagicMock, patch
+        import tempfile, os
+
+        mock_pipe_result = MagicMock()
+        mock_pipe_result.get_markdown.return_value = "# Hello\n\nExtracted content"
+
+        mock_infer_result = MagicMock()
+        mock_infer_result.pipe_txt_mode.return_value = mock_pipe_result
+
+        mock_dataset = MagicMock()
+        mock_dataset.classify.return_value = "txt"
+        mock_dataset.apply.return_value = mock_infer_result
+        mock_dataset._lang = None
+
+        mock_spm = MagicMock()
+        mock_spm.TXT = "txt"
+
+        with patch("docfold.engines.mineru_engine._ensure_imports"), \
+             patch("docfold.engines.mineru_engine.PymuDocDataset", return_value=mock_dataset), \
+             patch("docfold.engines.mineru_engine.SupportedPdfParseMethod", mock_spm), \
+             patch("docfold.engines.mineru_engine.FileBasedDataWriter"), \
+             patch("docfold.engines.mineru_engine.doc_analyze"):
+            e = MinerUEngine()
+            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+                f.write(b"%PDF-1.4 minimal")
+                f.flush()
+                try:
+                    result = await e.process(f.name, OutputFormat.MARKDOWN)
+                    assert isinstance(result, EngineResult)
+                    assert result.engine_name == "mineru"
+                    assert result.content == "# Hello\n\nExtracted content"
+                    assert result.format == OutputFormat.MARKDOWN
+                    assert result.processing_time_ms >= 0
+                finally:
+                    os.unlink(f.name)
+
+    @pytest.mark.asyncio
+    async def test_process_ocr_mode_for_scanned_pdf(self):
+        """MinerU uses OCR mode when PDF is classified as scanned."""
+        from docfold.engines.mineru_engine import MinerUEngine
+        from docfold.engines.base import OutputFormat
+        from unittest.mock import MagicMock, patch
+        import tempfile, os
+
+        mock_pipe_result = MagicMock()
+        mock_pipe_result.get_markdown.return_value = "OCR content"
+
+        mock_infer_result = MagicMock()
+        mock_infer_result.pipe_ocr_mode.return_value = mock_pipe_result
+
+        mock_dataset = MagicMock()
+        mock_dataset.classify.return_value = "ocr"
+        mock_dataset.apply.return_value = mock_infer_result
+        mock_dataset._lang = None
+
+        mock_spm = MagicMock()
+        mock_spm.TXT = "txt"
+
+        with patch("docfold.engines.mineru_engine._ensure_imports"), \
+             patch("docfold.engines.mineru_engine.PymuDocDataset", return_value=mock_dataset), \
+             patch("docfold.engines.mineru_engine.SupportedPdfParseMethod", mock_spm), \
+             patch("docfold.engines.mineru_engine.FileBasedDataWriter"), \
+             patch("docfold.engines.mineru_engine.doc_analyze"):
+            e = MinerUEngine()
+            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+                f.write(b"%PDF-1.4 minimal")
+                f.flush()
+                try:
+                    result = await e.process(f.name, OutputFormat.MARKDOWN)
+                    assert result.content == "OCR content"
+                    mock_infer_result.pipe_ocr_mode.assert_called_once()
+                finally:
+                    os.unlink(f.name)
+
+    @pytest.mark.asyncio
+    async def test_process_json_output_format(self):
+        """MinerU returns content_list JSON when output_format is JSON."""
+        from docfold.engines.mineru_engine import MinerUEngine
+        from docfold.engines.base import OutputFormat
+        from unittest.mock import MagicMock, patch
+        import tempfile, os
+
+        mock_pipe_result = MagicMock()
+        mock_pipe_result.get_markdown.return_value = "md content"
+        mock_pipe_result.get_content_list.return_value = '[{"type": "text", "text": "hello"}]'
+
+        mock_infer_result = MagicMock()
+        mock_infer_result.pipe_txt_mode.return_value = mock_pipe_result
+
+        mock_dataset = MagicMock()
+        mock_dataset.classify.return_value = "txt"
+        mock_dataset.apply.return_value = mock_infer_result
+        mock_dataset._lang = None
+
+        mock_spm = MagicMock()
+        mock_spm.TXT = "txt"
+
+        with patch("docfold.engines.mineru_engine._ensure_imports"), \
+             patch("docfold.engines.mineru_engine.PymuDocDataset", return_value=mock_dataset), \
+             patch("docfold.engines.mineru_engine.SupportedPdfParseMethod", mock_spm), \
+             patch("docfold.engines.mineru_engine.FileBasedDataWriter"), \
+             patch("docfold.engines.mineru_engine.doc_analyze"):
+            e = MinerUEngine()
+            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+                f.write(b"%PDF-1.4 minimal")
+                f.flush()
+                try:
+                    result = await e.process(f.name, OutputFormat.JSON)
+                    assert result.format == OutputFormat.JSON
+                    assert "text" in result.content
+                finally:
+                    os.unlink(f.name)
+
+    @pytest.mark.asyncio
+    async def test_process_with_page_range(self):
+        """MinerU respects start_page and end_page kwargs."""
+        from docfold.engines.mineru_engine import MinerUEngine
+        from docfold.engines.base import OutputFormat
+        from unittest.mock import MagicMock, patch
+        import tempfile, os
+
+        mock_pipe_result = MagicMock()
+        mock_pipe_result.get_markdown.return_value = "page content"
+
+        mock_infer_result = MagicMock()
+        mock_infer_result.pipe_txt_mode.return_value = mock_pipe_result
+
+        mock_dataset = MagicMock()
+        mock_dataset.classify.return_value = "txt"
+        mock_dataset.apply.return_value = mock_infer_result
+        mock_dataset._lang = None
+
+        mock_spm = MagicMock()
+        mock_spm.TXT = "txt"
+
+        with patch("docfold.engines.mineru_engine._ensure_imports"), \
+             patch("docfold.engines.mineru_engine.PymuDocDataset", return_value=mock_dataset), \
+             patch("docfold.engines.mineru_engine.SupportedPdfParseMethod", mock_spm), \
+             patch("docfold.engines.mineru_engine.FileBasedDataWriter"), \
+             patch("docfold.engines.mineru_engine.doc_analyze"), \
+             patch("docfold.engines.mineru_engine.convert_pdf_bytes_to_bytes_by_pymupdf") as mock_convert:
+            mock_convert.return_value = b"%PDF-1.4 subset"
+            e = MinerUEngine()
+            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+                f.write(b"%PDF-1.4 minimal")
+                f.flush()
+                try:
+                    result = await e.process(
+                        f.name, OutputFormat.MARKDOWN,
+                        start_page=2, end_page=5,
+                    )
+                    mock_convert.assert_called_once()
+                finally:
+                    os.unlink(f.name)
+
 
 class TestMarkerEngine:
     def test_name(self):

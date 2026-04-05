@@ -1,8 +1,8 @@
 {
-  "benchmark_date": "2026-03-22 14:07:03",
+  "benchmark_date": "2026-04-05 17:26:11",
   "engines": [
     "pymupdf",
-    "liteparse"
+    "mineru"
   ],
   "documents": [
     {
@@ -28,7 +28,7 @@
   ],
   "summary": {
     "pymupdf": {
-      "avg_time_ms": 4.5,
+      "avg_time_ms": 6.5,
       "avg_cer": 0.0,
       "avg_wer": 0.0,
       "avg_bbox_count": 6.2,
@@ -46,7 +46,7 @@
         },
         {
           "doc": "multi_page",
-          "time_ms": 3,
+          "time_ms": 11,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 4,
@@ -73,49 +73,49 @@
         }
       ]
     },
-    "liteparse": {
-      "avg_time_ms": 382.0,
-      "avg_cer": 0.0,
-      "avg_wer": 0.0,
-      "avg_bbox_count": 31.8,
+    "mineru": {
+      "avg_time_ms": 24698.2,
+      "avg_cer": 0.0118,
+      "avg_wer": 0.0804,
+      "avg_bbox_count": 0.0,
       "errors": 0,
       "successes": 4,
       "results": [
         {
           "doc": "simple_text",
-          "time_ms": 426,
-          "cer": 0.0,
-          "wer": 0.0,
-          "bbox_count": 18,
-          "content_length": 121,
-          "pages": 1
+          "time_ms": 81402,
+          "cer": 0.0083,
+          "wer": 0.0556,
+          "bbox_count": 0,
+          "content_length": 122,
+          "pages": null
         },
         {
           "doc": "multi_page",
-          "time_ms": 359,
+          "time_ms": 9087,
           "cer": 0.0,
           "wer": 0.0,
-          "bbox_count": 39,
+          "bbox_count": 0,
           "content_length": 300,
-          "pages": 2
+          "pages": null
         },
         {
           "doc": "dense_financial",
-          "time_ms": 364,
-          "cer": 0.0,
-          "wer": 0.0,
-          "bbox_count": 33,
-          "content_length": 298,
-          "pages": 1
+          "time_ms": 3504,
+          "cer": 0.0235,
+          "wer": 0.2121,
+          "bbox_count": 0,
+          "content_length": 305,
+          "pages": null
         },
         {
           "doc": "mixed_formatting",
-          "time_ms": 379,
-          "cer": 0.0,
-          "wer": 0.0,
-          "bbox_count": 37,
-          "content_length": 260,
-          "pages": 1
+          "time_ms": 4800,
+          "cer": 0.0154,
+          "wer": 0.0541,
+          "bbox_count": 0,
+          "content_length": 264,
+          "pages": null
         }
       ]
     }

@@ -1,6 +1,6 @@
-"""Benchmark script — compares LiteParse vs PyMuPDF on synthetic PDF documents.
+"""Benchmark script — compares engines on synthetic PDF documents.
 
-Generates test PDFs with known content, runs both engines, and measures:
+Generates test PDFs with known content, runs engines, and measures:
 - Processing speed (ms)
 - Text extraction quality (CER, WER)
 - Bounding box coverage
@@ -187,11 +187,13 @@ async def run_engine(engine, file_path: str, fmt):
 async def main():
     from docfold.engines.base import OutputFormat
     from docfold.engines.liteparse_engine import LiteParseEngine
+    from docfold.engines.mineru_engine import MinerUEngine
     from docfold.engines.pymupdf_engine import PyMuPDFEngine
 
     # Use --no-ocr for digital PDFs (Tesseract.js may not work in all envs)
     liteparse = LiteParseEngine(ocr_enabled=False)
     pymupdf = PyMuPDFEngine()
+    mineru = MinerUEngine()
 
     engines = []
     if pymupdf.is_available():
@@ -202,6 +204,10 @@ async def main():
         engines.append(liteparse)
     else:
         print("WARNING: LiteParse not available (install: npm i -g @llamaindex/liteparse)")
+    if mineru.is_available():
+        engines.append(mineru)
+    else:
+        print("WARNING: MinerU not available (install: pip install docfold[mineru])")
 
     if not engines:
         print("ERROR: No engines available for benchmarking")

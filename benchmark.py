@@ -187,13 +187,17 @@ async def run_engine(engine, file_path: str, fmt):
 async def main():
     from docfold.engines.base import OutputFormat
     from docfold.engines.liteparse_engine import LiteParseEngine
+    from docfold.engines.marker_local_engine import MarkerLocalEngine
     from docfold.engines.mineru_engine import MinerUEngine
     from docfold.engines.pymupdf_engine import PyMuPDFEngine
+    from docfold.engines.surya_engine import SuryaEngine
 
     # Use --no-ocr for digital PDFs (Tesseract.js may not work in all envs)
     liteparse = LiteParseEngine(ocr_enabled=False)
     pymupdf = PyMuPDFEngine()
     mineru = MinerUEngine()
+    marker_local = MarkerLocalEngine()
+    surya = SuryaEngine()
 
     engines = []
     if pymupdf.is_available():
@@ -208,6 +212,14 @@ async def main():
         engines.append(mineru)
     else:
         print("WARNING: MinerU not available (install: pip install docfold[mineru])")
+    if marker_local.is_available():
+        engines.append(marker_local)
+    else:
+        print("WARNING: Marker local not available (install: pip install marker-pdf)")
+    if surya.is_available():
+        engines.append(surya)
+    else:
+        print("WARNING: Surya not available (install: pip install surya-ocr)")
 
     if not engines:
         print("ERROR: No engines available for benchmarking")

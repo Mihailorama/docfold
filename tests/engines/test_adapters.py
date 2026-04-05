@@ -282,6 +282,99 @@ class TestMarkerEngine:
         assert e._defaults["paginate"] is True
 
 
+class TestMarkerLocalEngine:
+    def test_name(self):
+        from docfold.engines.marker_local_engine import MarkerLocalEngine
+        e = MarkerLocalEngine()
+        assert e.name == "marker_local"
+
+    def test_supported_extensions(self):
+        from docfold.engines.marker_local_engine import MarkerLocalEngine
+        e = MarkerLocalEngine()
+        exts = e.supported_extensions
+        assert "pdf" in exts
+        assert "docx" in exts
+        assert "png" in exts
+
+    def test_is_available_when_missing(self):
+        from docfold.engines.marker_local_engine import MarkerLocalEngine
+        e = MarkerLocalEngine()
+        with patch.dict("sys.modules", {"marker": None}):
+            result = e.is_available()
+            assert isinstance(result, bool)
+
+    def test_config_stored(self):
+        from docfold.engines.marker_local_engine import MarkerLocalEngine
+        e = MarkerLocalEngine(force_ocr=True)
+        assert e._force_ocr is True
+
+    def test_capabilities(self):
+        from docfold.engines.marker_local_engine import MarkerLocalEngine
+        e = MarkerLocalEngine()
+        caps = e.capabilities
+        assert caps.table_structure is True
+        assert caps.heading_detection is True
+        assert caps.bounding_boxes is False
+        assert caps.confidence is False
+
+    @pytest.mark.asyncio
+    async def test_process_returns_engine_result(self):
+        """MarkerLocal engine processes a PDF and returns a valid EngineResult."""
+        from docfold.engines.marker_local_engine import MarkerLocalEngine
+        from docfold.engines.base import EngineResult, OutputFormat
+        from unittest.mock import MagicMock, patch
+        import tempfile, os
+
+        mock_rendered = MagicMock()
+        mock_converter = MagicMock(return_value=mock_rendered)
+
+        with patch("docfold.engines.marker_local_engine._ensure_imports"), \
+             patch("docfold.engines.marker_local_engine.PdfConverter", return_value=mock_converter), \
+             patch("docfold.engines.marker_local_engine.create_model_dict", return_value={}), \
+             patch("docfold.engines.marker_local_engine.text_from_rendered", return_value=("# Extracted\n\nContent", {}, {})):
+            e = MarkerLocalEngine()
+            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+                f.write(b"%PDF-1.4 minimal")
+                f.flush()
+                try:
+                    result = await e.process(f.name, OutputFormat.MARKDOWN)
+                    assert isinstance(result, EngineResult)
+                    assert result.engine_name == "marker_local"
+                    assert result.content == "# Extracted\n\nContent"
+                    assert result.format == OutputFormat.MARKDOWN
+                    assert result.processing_time_ms >= 0
+                finally:
+                    os.unlink(f.name)
+
+    @pytest.mark.asyncio
+    async def test_process_json_output(self):
+        """MarkerLocal returns JSON wrapping markdown content."""
+        from docfold.engines.marker_local_engine import MarkerLocalEngine
+        from docfold.engines.base import OutputFormat
+        from unittest.mock import MagicMock, patch
+        import tempfile, os, json
+
+        mock_rendered = MagicMock()
+        mock_converter = MagicMock(return_value=mock_rendered)
+
+        with patch("docfold.engines.marker_local_engine._ensure_imports"), \
+             patch("docfold.engines.marker_local_engine.PdfConverter", return_value=mock_converter), \
+             patch("docfold.engines.marker_local_engine.create_model_dict", return_value={}), \
+             patch("docfold.engines.marker_local_engine.text_from_rendered", return_value=("hello", {}, {"img.png": b"data"})):
+            e = MarkerLocalEngine()
+            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+                f.write(b"%PDF-1.4 minimal")
+                f.flush()
+                try:
+                    result = await e.process(f.name, OutputFormat.JSON)
+                    assert result.format == OutputFormat.JSON
+                    parsed = json.loads(result.content)
+                    assert parsed["markdown"] == "hello"
+                    assert "img.png" in parsed["images"]
+                finally:
+                    os.unlink(f.name)
+
+
 class TestPyMuPDFEngine:
     def test_name(self):
         from docfold.engines.pymupdf_engine import PyMuPDFEngine
@@ -1197,6 +1290,7 @@ class TestAllEnginesImplementInterface:
         "docfold.engines.docling_serve_engine.DoclingServeEngine",
         "docfold.engines.firecrawl_engine.FirecrawlEngine",
         "docfold.engines.chandra_engine.ChandraEngine",
+        "docfold.engines.marker_local_engine.MarkerLocalEngine",
     ])
     def test_has_required_attributes(self, engine_cls_path):
         module_path, cls_name = engine_cls_path.rsplit(".", 1)

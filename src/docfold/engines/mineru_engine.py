@@ -130,6 +130,12 @@ class MinerUEngine(DocumentEngine):
                 cls for cls in vars(_tasks).values()
                 if isinstance(cls, type)
             ]
+            # The YOLO checkpoint also requires dill._dill._load_type
+            try:
+                from dill._dill import _load_type
+                _safe_classes.append(_load_type)
+            except ImportError:
+                pass
             if _safe_classes:
                 torch.serialization.add_safe_globals(_safe_classes)
         except Exception:

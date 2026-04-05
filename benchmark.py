@@ -186,40 +186,37 @@ async def run_engine(engine, file_path: str, fmt):
 
 async def main():
     from docfold.engines.base import OutputFormat
+    from docfold.engines.docling_engine import DoclingEngine
+    from docfold.engines.easyocr_engine import EasyOCREngine
     from docfold.engines.liteparse_engine import LiteParseEngine
     from docfold.engines.marker_local_engine import MarkerLocalEngine
     from docfold.engines.mineru_engine import MinerUEngine
+    from docfold.engines.paddleocr_engine import PaddleOCREngine
     from docfold.engines.pymupdf_engine import PyMuPDFEngine
     from docfold.engines.surya_engine import SuryaEngine
+    from docfold.engines.tesseract_engine import TesseractEngine
+    from docfold.engines.unstructured_engine import UnstructuredEngine
 
-    # Use --no-ocr for digital PDFs (Tesseract.js may not work in all envs)
-    liteparse = LiteParseEngine(ocr_enabled=False)
-    pymupdf = PyMuPDFEngine()
-    mineru = MinerUEngine()
-    marker_local = MarkerLocalEngine()
-    surya = SuryaEngine()
+    # All local/open-source engines to benchmark
+    candidates = [
+        (PyMuPDFEngine(), "pip install pymupdf"),
+        (LiteParseEngine(ocr_enabled=False), "npm i -g @llamaindex/liteparse"),
+        (MinerUEngine(), "pip install docfold[mineru]"),
+        (MarkerLocalEngine(), "pip install marker-pdf"),
+        (SuryaEngine(), "pip install surya-ocr"),
+        (DoclingEngine(), "pip install docling"),
+        (EasyOCREngine(gpu=False), "pip install easyocr"),
+        (PaddleOCREngine(), "pip install paddleocr"),
+        (TesseractEngine(), "pip install pytesseract"),
+        (UnstructuredEngine(), "pip install unstructured"),
+    ]
 
     engines = []
-    if pymupdf.is_available():
-        engines.append(pymupdf)
-    else:
-        print("WARNING: PyMuPDF not available, skipping")
-    if liteparse.is_available():
-        engines.append(liteparse)
-    else:
-        print("WARNING: LiteParse not available (install: npm i -g @llamaindex/liteparse)")
-    if mineru.is_available():
-        engines.append(mineru)
-    else:
-        print("WARNING: MinerU not available (install: pip install docfold[mineru])")
-    if marker_local.is_available():
-        engines.append(marker_local)
-    else:
-        print("WARNING: Marker local not available (install: pip install marker-pdf)")
-    if surya.is_available():
-        engines.append(surya)
-    else:
-        print("WARNING: Surya not available (install: pip install surya-ocr)")
+    for engine, install_hint in candidates:
+        if engine.is_available():
+            engines.append(engine)
+        else:
+            print(f"WARNING: {engine.name} not available (install: {install_hint})")
 
     if not engines:
         print("ERROR: No engines available for benchmarking")
@@ -249,7 +246,7 @@ async def main():
                 )
 
                 if error:
-                    print(f"  {engine.name:<14} ERROR: {error}")
+                    print(f"  {engine.name:<16}ERROR: {error}")
                     all_results[engine.name].append({
                         "doc": doc["name"],
                         "error": error,
@@ -276,7 +273,7 @@ async def main():
                 all_results[engine.name].append(score)
 
                 print(
-                    f"  {engine.name:<14} "
+                    f"  {engine.name:<16}"
                     f"time={time_ms:>6}ms  "
                     f"CER={cer:.4f}  "
                     f"WER={wer:.4f}  "
@@ -289,10 +286,10 @@ async def main():
         print("BENCHMARK SUMMARY")
         print(f"{'=' * 90}")
         print(
-            f"  {'Engine':<14} {'Avg Time':>10} {'Avg CER':>10} {'Avg WER':>10} "
+            f"  {'Engine':<16} {'Avg Time':>10} {'Avg CER':>10} {'Avg WER':>10} "
             f"{'Avg BBoxes':>11} {'Errors':>8}"
         )
-        print(f"  {'─' * 68}")
+        print(f"  {'─' * 70}")
 
         summary = {}
         for engine_name, results in all_results.items():
@@ -318,7 +315,7 @@ async def main():
             }
 
             print(
-                f"  {engine_name:<14} {avg_time:>9.1f}ms {avg_cer:>10.4f} {avg_wer:>10.4f} "
+                f"  {engine_name:<16} {avg_time:>9.1f}ms {avg_cer:>10.4f} {avg_wer:>10.4f} "
                 f"{avg_bbox:>11.1f} {len(errors):>8}"
             )
 

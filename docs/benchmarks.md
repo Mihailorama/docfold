@@ -352,6 +352,103 @@ Capabilities each engine can populate in `EngineResult`:
 
 ---
 
+## Measured Benchmark Results (Local Engines)
+
+Benchmarked on 2026-04-05 using synthetic PDF documents with known ground truth.
+All engines ran on CPU (no GPU). Times include model loading on first document.
+
+### Summary Table
+
+| Engine | Avg Time | Avg CER | Avg WER | Type | Notes |
+|--------|----------|---------|---------|------|-------|
+| **PyMuPDF** | **8 ms** | **0.0000** | **0.0000** | Text extraction | Perfect on digital PDFs, no OCR |
+| **Unstructured** | **632 ms** | 0.0357 | 0.1353 | Hybrid | Fast partitioning, higher error on formatting |
+| **Tesseract** | **1,251 ms** | **0.0000** | **0.0000** | OCR | Perfect on clean digital PDFs |
+| **Docling** | **2,582 ms** | 0.0173 | 0.0406 | Layout + OCR | Best accuracy/speed tradeoff among ML engines |
+| **MinerU** | **17,559 ms** | 0.0118 | 0.0804 | Layout + OCR | Lowest CER among ML engines, slow on CPU |
+| **Surya** | **33,134 ms** | 0.0135 | 0.0270 | OCR + Layout | Lowest WER among ML engines, slow on CPU |
+| **EasyOCR** | **40,728 ms** | 0.0186 | 0.0467 | OCR | Decent accuracy, very slow on CPU |
+| **Marker Local** | **40,791 ms** | 0.0191 | 0.0936 | Layout + OCR | Full document conversion, slow on CPU |
+| **PaddleOCR** | N/A | N/A | N/A | OCR | Runtime error on CPU (PaddlePaddle backend) |
+
+**Metrics:**
+- **CER** (Character Error Rate): Lower is better. 0.0 = perfect match.
+- **WER** (Word Error Rate): Lower is better. 0.0 = perfect match.
+- **Time**: Wall-clock time including model init (first run is slower).
+
+### Per-Document Breakdown
+
+#### Simple Invoice (1 page, 5 lines)
+
+| Engine | Time | CER | WER |
+|--------|------|-----|-----|
+| PyMuPDF | 8 ms | 0.0000 | 0.0000 |
+| Tesseract | 953 ms | 0.0000 | 0.0000 |
+| Unstructured | 2,309 ms | 0.0661 | 0.2222 |
+| Docling | 3,844 ms | 0.0248 | 0.0556 |
+| Surya | 8,148 ms | 0.0000 | 0.0000 |
+| Marker Local | 14,927 ms | 0.0083 | 0.0556 |
+| EasyOCR | 32,251 ms | 0.0000 | 0.0000 |
+| MinerU | 52,668 ms | 0.0083 | 0.0556 |
+
+#### Multi-Page Report (2 pages, 4 paragraphs)
+
+| Engine | Time | CER | WER |
+|--------|------|-----|-----|
+| PyMuPDF | 7 ms | 0.0000 | 0.0000 |
+| Unstructured | 87 ms | 0.0067 | 0.0256 |
+| Tesseract | 1,804 ms | 0.0000 | 0.0000 |
+| Docling | 3,135 ms | 0.0100 | 0.0256 |
+| MinerU | 7,677 ms | 0.0000 | 0.0000 |
+| Surya | 45,464 ms | 0.0000 | 0.0000 |
+| EasyOCR | 65,528 ms | 0.0400 | 0.1026 |
+| Marker Local | 72,495 ms | 0.0100 | 0.0256 |
+
+#### Dense Financial Data (1 page, 10 lines of numbers)
+
+| Engine | Time | CER | WER |
+|--------|------|-----|-----|
+| PyMuPDF | 13 ms | 0.0000 | 0.0000 |
+| Unstructured | 63 ms | 0.0470 | 0.2121 |
+| Tesseract | 1,156 ms | 0.0000 | 0.0000 |
+| Docling | 1,753 ms | 0.0000 | 0.0000 |
+| MinerU | 4,743 ms | 0.0235 | 0.2121 |
+| EasyOCR | 32,467 ms | 0.0034 | 0.0303 |
+| Surya | 35,490 ms | 0.0000 | 0.0000 |
+| Marker Local | 38,180 ms | 0.0235 | 0.2121 |
+
+#### Mixed Formatting (1 page, headings + body, varied font sizes)
+
+| Engine | Time | CER | WER |
+|--------|------|-----|-----|
+| PyMuPDF | 3 ms | 0.0000 | 0.0000 |
+| Unstructured | 67 ms | 0.0231 | 0.0811 |
+| Tesseract | 1,090 ms | 0.0000 | 0.0000 |
+| Docling | 1,595 ms | 0.0346 | 0.0811 |
+| MinerU | 5,147 ms | 0.0154 | 0.0541 |
+| EasyOCR | 32,666 ms | 0.0308 | 0.0541 |
+| Marker Local | 37,560 ms | 0.0346 | 0.0811 |
+| Surya | 43,432 ms | 0.0538 | 0.1081 |
+
+### Key Takeaways
+
+1. **PyMuPDF** is unbeatable for digital PDFs (text-layer extraction, no OCR). Perfect accuracy at <10ms.
+2. **Tesseract** achieves perfect accuracy on clean digital PDFs with fast processing (~1.2s). The gold standard for basic OCR.
+3. **Docling** offers the best balance of speed and accuracy among ML-powered engines (~2.6s, 0.017 CER).
+4. **MinerU** has the lowest character error rate (0.012 CER) among ML engines but is significantly slower.
+5. **Surya** excels at word-level accuracy (lowest WER at 0.027) but is slow on CPU.
+6. **Unstructured** is fast for a hybrid engine but has the highest error rates, especially on financial data.
+7. **EasyOCR** and **Marker Local** are both very slow on CPU (~40s) — they benefit greatly from GPU acceleration.
+8. **PaddleOCR** v3 has compatibility issues with the PaddlePaddle framework on some CPU configurations.
+
+> **Note:** These benchmarks use synthetic digital PDFs with embedded text. Results on scanned documents, handwritten text, or complex layouts may differ significantly. ML-based engines (MinerU, Marker, Surya, Docling) are designed for these harder cases and would show their advantages there.
+
+> **GPU Impact:** Engines like Surya, Marker Local, MinerU, and EasyOCR are designed for GPU acceleration and can be 5-20x faster with CUDA. CPU times shown here are worst-case scenarios.
+
+See `docs/benchmark_results.json` for the full machine-readable results.
+
+---
+
 ## Methodology
 
 These ratings are compiled from:

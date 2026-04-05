@@ -85,17 +85,23 @@ class PaddleOCREngine(DocumentEngine):
         # Suppress noisy PaddleOCR logs (show_log param removed in PaddleOCR 3.x)
         logging.getLogger("ppocr").setLevel(logging.WARNING)
         ocr = PaddleOCR(lang=self._lang)
-        result = ocr.ocr(image_path, cls=True)
 
+        # PaddleOCR 3.x uses predict(); 2.x uses ocr()
         lines: list[str] = []
         confidences: list[float] = []
 
-        if result and result[0]:
-            for line_info in result[0]:
-                text = line_info[1][0]
-                conf = line_info[1][1]
-                lines.append(text)
-                confidences.append(conf)
+        if hasattr(ocr, "predict"):
+            for result in ocr.predict(image_path):
+                if hasattr(result, "rec_texts"):
+                    lines.extend(result.rec_texts)
+                if hasattr(result, "rec_scores"):
+                    confidences.extend(result.rec_scores)
+        else:
+            result = ocr.ocr(image_path, cls=True)
+            if result and result[0]:
+                for line_info in result[0]:
+                    lines.append(line_info[1][0])
+                    confidences.append(line_info[1][1])
 
         full_text = "\n".join(lines)
         avg_conf = sum(confidences) / len(confidences) if confidences else None

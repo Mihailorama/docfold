@@ -1,12 +1,11 @@
 {
-  "benchmark_date": "2026-04-05 20:02:37",
+  "benchmark_date": "2026-04-05 22:20:15",
   "engines": [
     "pymupdf",
     "mineru",
     "marker_local",
     "surya",
     "docling",
-    "easyocr",
     "paddleocr",
     "tesseract",
     "unstructured"
@@ -35,7 +34,7 @@
   ],
   "summary": {
     "pymupdf": {
-      "avg_time_ms": 7.8,
+      "avg_time_ms": 3.5,
       "avg_cer": 0.0,
       "avg_wer": 0.0,
       "avg_bbox_count": 6.2,
@@ -44,7 +43,7 @@
       "results": [
         {
           "doc": "simple_text",
-          "time_ms": 8,
+          "time_ms": 6,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 5,
@@ -53,7 +52,7 @@
         },
         {
           "doc": "multi_page",
-          "time_ms": 7,
+          "time_ms": 2,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 4,
@@ -62,7 +61,7 @@
         },
         {
           "doc": "dense_financial",
-          "time_ms": 13,
+          "time_ms": 3,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 10,
@@ -81,7 +80,7 @@
       ]
     },
     "mineru": {
-      "avg_time_ms": 17558.8,
+      "avg_time_ms": 18304.8,
       "avg_cer": 0.0118,
       "avg_wer": 0.0804,
       "avg_bbox_count": 0.0,
@@ -90,7 +89,7 @@
       "results": [
         {
           "doc": "simple_text",
-          "time_ms": 52668,
+          "time_ms": 55848,
           "cer": 0.0083,
           "wer": 0.0556,
           "bbox_count": 0,
@@ -99,7 +98,7 @@
         },
         {
           "doc": "multi_page",
-          "time_ms": 7677,
+          "time_ms": 7511,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 0,
@@ -108,7 +107,7 @@
         },
         {
           "doc": "dense_financial",
-          "time_ms": 4743,
+          "time_ms": 4845,
           "cer": 0.0235,
           "wer": 0.2121,
           "bbox_count": 0,
@@ -117,7 +116,7 @@
         },
         {
           "doc": "mixed_formatting",
-          "time_ms": 5147,
+          "time_ms": 5015,
           "cer": 0.0154,
           "wer": 0.0541,
           "bbox_count": 0,
@@ -127,7 +126,7 @@
       ]
     },
     "marker_local": {
-      "avg_time_ms": 40790.5,
+      "avg_time_ms": 39090.5,
       "avg_cer": 0.0191,
       "avg_wer": 0.0936,
       "avg_bbox_count": 0.0,
@@ -136,7 +135,7 @@
       "results": [
         {
           "doc": "simple_text",
-          "time_ms": 14927,
+          "time_ms": 13760,
           "cer": 0.0083,
           "wer": 0.0556,
           "bbox_count": 0,
@@ -145,7 +144,7 @@
         },
         {
           "doc": "multi_page",
-          "time_ms": 72495,
+          "time_ms": 69190,
           "cer": 0.01,
           "wer": 0.0256,
           "bbox_count": 0,
@@ -154,7 +153,7 @@
         },
         {
           "doc": "dense_financial",
-          "time_ms": 38180,
+          "time_ms": 37193,
           "cer": 0.0235,
           "wer": 0.2121,
           "bbox_count": 0,
@@ -163,7 +162,7 @@
         },
         {
           "doc": "mixed_formatting",
-          "time_ms": 37560,
+          "time_ms": 36219,
           "cer": 0.0346,
           "wer": 0.0811,
           "bbox_count": 0,
@@ -173,7 +172,7 @@
       ]
     },
     "surya": {
-      "avg_time_ms": 33133.5,
+      "avg_time_ms": 32959.2,
       "avg_cer": 0.0135,
       "avg_wer": 0.027,
       "avg_bbox_count": 0.0,
@@ -182,7 +181,7 @@
       "results": [
         {
           "doc": "simple_text",
-          "time_ms": 8148,
+          "time_ms": 7741,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 0,
@@ -191,7 +190,7 @@
         },
         {
           "doc": "multi_page",
-          "time_ms": 45464,
+          "time_ms": 45426,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 0,
@@ -200,7 +199,7 @@
         },
         {
           "doc": "dense_financial",
-          "time_ms": 35490,
+          "time_ms": 35792,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 0,
@@ -209,7 +208,7 @@
         },
         {
           "doc": "mixed_formatting",
-          "time_ms": 43432,
+          "time_ms": 42878,
           "cer": 0.0538,
           "wer": 0.1081,
           "bbox_count": 0,
@@ -219,7 +218,7 @@
       ]
     },
     "docling": {
-      "avg_time_ms": 2581.8,
+      "avg_time_ms": 2601.0,
       "avg_cer": 0.0173,
       "avg_wer": 0.0406,
       "avg_bbox_count": 0.0,
@@ -228,7 +227,7 @@
       "results": [
         {
           "doc": "simple_text",
-          "time_ms": 3844,
+          "time_ms": 3738,
           "cer": 0.0248,
           "wer": 0.0556,
           "bbox_count": 0,
@@ -237,7 +236,7 @@
         },
         {
           "doc": "multi_page",
-          "time_ms": 3135,
+          "time_ms": 3170,
           "cer": 0.01,
           "wer": 0.0256,
           "bbox_count": 0,
@@ -246,7 +245,7 @@
         },
         {
           "doc": "dense_financial",
-          "time_ms": 1753,
+          "time_ms": 1715,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 0,
@@ -255,7 +254,7 @@
         },
         {
           "doc": "mixed_formatting",
-          "time_ms": 1595,
+          "time_ms": 1781,
           "cer": 0.0346,
           "wer": 0.0811,
           "bbox_count": 0,
@@ -264,17 +263,17 @@
         }
       ]
     },
-    "easyocr": {
-      "avg_time_ms": 40728.0,
-      "avg_cer": 0.0186,
-      "avg_wer": 0.0467,
+    "paddleocr": {
+      "avg_time_ms": 1617.2,
+      "avg_cer": 0.0018,
+      "avg_wer": 0.0132,
       "avg_bbox_count": 0.0,
       "errors": 0,
       "successes": 4,
       "results": [
         {
           "doc": "simple_text",
-          "time_ms": 32251,
+          "time_ms": 1304,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 0,
@@ -283,61 +282,35 @@
         },
         {
           "doc": "multi_page",
-          "time_ms": 65528,
-          "cer": 0.04,
-          "wer": 0.1026,
+          "time_ms": 2226,
+          "cer": 0.0033,
+          "wer": 0.0256,
           "bbox_count": 0,
-          "content_length": 300,
+          "content_length": 299,
           "pages": null
         },
         {
           "doc": "dense_financial",
-          "time_ms": 32467,
-          "cer": 0.0034,
-          "wer": 0.0303,
+          "time_ms": 1391,
+          "cer": 0.0,
+          "wer": 0.0,
           "bbox_count": 0,
           "content_length": 298,
           "pages": null
         },
         {
           "doc": "mixed_formatting",
-          "time_ms": 32666,
-          "cer": 0.0308,
-          "wer": 0.0541,
+          "time_ms": 1548,
+          "cer": 0.0038,
+          "wer": 0.027,
           "bbox_count": 0,
-          "content_length": 260,
+          "content_length": 261,
           "pages": null
         }
       ]
     },
-    "paddleocr": {
-      "avg_time_ms": 0,
-      "avg_cer": 0,
-      "avg_wer": 0,
-      "avg_bbox_count": 0,
-      "errors": 4,
-      "successes": 0,
-      "results": [
-        {
-          "doc": "simple_text",
-          "error": "PaddleOCR.predict() got an unexpected keyword argument 'cls'"
-        },
-        {
-          "doc": "multi_page",
-          "error": "PaddleOCR.predict() got an unexpected keyword argument 'cls'"
-        },
-        {
-          "doc": "dense_financial",
-          "error": "PaddleOCR.predict() got an unexpected keyword argument 'cls'"
-        },
-        {
-          "doc": "mixed_formatting",
-          "error": "PaddleOCR.predict() got an unexpected keyword argument 'cls'"
-        }
-      ]
-    },
     "tesseract": {
-      "avg_time_ms": 1250.8,
+      "avg_time_ms": 1190.0,
       "avg_cer": 0.0,
       "avg_wer": 0.0,
       "avg_bbox_count": 0.0,
@@ -346,7 +319,7 @@
       "results": [
         {
           "doc": "simple_text",
-          "time_ms": 953,
+          "time_ms": 881,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 0,
@@ -355,7 +328,7 @@
         },
         {
           "doc": "multi_page",
-          "time_ms": 1804,
+          "time_ms": 1718,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 0,
@@ -364,7 +337,7 @@
         },
         {
           "doc": "dense_financial",
-          "time_ms": 1156,
+          "time_ms": 1106,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 0,
@@ -373,7 +346,7 @@
         },
         {
           "doc": "mixed_formatting",
-          "time_ms": 1090,
+          "time_ms": 1055,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 0,
@@ -383,7 +356,7 @@
       ]
     },
     "unstructured": {
-      "avg_time_ms": 631.5,
+      "avg_time_ms": 597.0,
       "avg_cer": 0.0357,
       "avg_wer": 0.1353,
       "avg_bbox_count": 0.0,
@@ -392,7 +365,7 @@
       "results": [
         {
           "doc": "simple_text",
-          "time_ms": 2309,
+          "time_ms": 2213,
           "cer": 0.0661,
           "wer": 0.2222,
           "bbox_count": 0,
@@ -401,7 +374,7 @@
         },
         {
           "doc": "multi_page",
-          "time_ms": 87,
+          "time_ms": 75,
           "cer": 0.0067,
           "wer": 0.0256,
           "bbox_count": 0,
@@ -410,7 +383,7 @@
         },
         {
           "doc": "dense_financial",
-          "time_ms": 63,
+          "time_ms": 55,
           "cer": 0.047,
           "wer": 0.2121,
           "bbox_count": 0,
@@ -419,7 +392,7 @@
         },
         {
           "doc": "mixed_formatting",
-          "time_ms": 67,
+          "time_ms": 45,
           "cer": 0.0231,
           "wer": 0.0811,
           "bbox_count": 0,

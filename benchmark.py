@@ -178,8 +178,13 @@ def normalize_text(text: str) -> str:
 async def run_engine(engine, file_path: str, fmt):
     """Run an engine and return (result, error)."""
     try:
-        result = await engine.process(file_path, output_format=fmt)
+        result = await asyncio.wait_for(
+            engine.process(file_path, output_format=fmt),
+            timeout=300,  # 5 min per engine per doc
+        )
         return result, None
+    except asyncio.TimeoutError:
+        return None, "timeout (>300s)"
     except Exception as exc:
         return None, str(exc)
 
@@ -191,6 +196,7 @@ async def main():
     from docfold.engines.liteparse_engine import LiteParseEngine
     from docfold.engines.marker_local_engine import MarkerLocalEngine
     from docfold.engines.mineru_engine import MinerUEngine
+    from docfold.engines.nougat_engine import NougatEngine
     from docfold.engines.paddleocr_engine import PaddleOCREngine
     from docfold.engines.pymupdf_engine import PyMuPDFEngine
     from docfold.engines.surya_engine import SuryaEngine
@@ -198,6 +204,9 @@ async def main():
     from docfold.engines.unstructured_engine import UnstructuredEngine
 
     # All local/open-source engines to benchmark
+    # NOTE: EasyOCR and Nougat are excluded from multi-doc runs because they
+    # hang/OOM on CPU with multi-page PDFs.  Their single-page results are
+    # included in the docs manually.
     candidates = [
         (PyMuPDFEngine(), "pip install pymupdf"),
         (LiteParseEngine(ocr_enabled=False), "npm i -g @llamaindex/liteparse"),
@@ -206,13 +215,21 @@ async def main():
         (SuryaEngine(), "pip install surya-ocr"),
         (DoclingEngine(), "pip install docling"),
         (EasyOCREngine(gpu=False), "pip install easyocr"),
+        (NougatEngine(), "pip install nougat-ocr"),
         (PaddleOCREngine(), "pip install paddleocr"),
         (TesseractEngine(), "pip install pytesseract"),
         (UnstructuredEngine(), "pip install unstructured"),
     ]
 
+    # Skip engines that hang on CPU for multi-doc benchmarks
+    skip_names = set(os.environ.get("BENCH_SKIP", "").split(",")) - {""}
+
+
     engines = []
     for engine, install_hint in candidates:
+        if engine.name in skip_names:
+            print(f"SKIPPING: {engine.name} (BENCH_SKIP)")
+            continue
         if engine.is_available():
             engines.append(engine)
         else:

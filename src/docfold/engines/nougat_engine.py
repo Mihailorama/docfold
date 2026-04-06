@@ -100,12 +100,74 @@ class NougatEngine(DocumentEngine):
         from nougat.utils.device import move_to_device
         from torch.utils.data import DataLoader
 
-        model = NougatModel.from_pretrained(self._model)
+        # NougatConfig defaults decoder_layer=10, but nougat-small only has
+        # 4 decoder layers.  Read the actual value from the HF config and
+        # monkey-patch NougatConfig so the model architecture matches the
+        # checkpoint.
+        import json as _json
+        from huggingface_hub import hf_hub_download
+        from nougat.model import NougatConfig
+
+        cfg_path = hf_hub_download(self._model, "config.json")
+        with open(cfg_path) as _f:
+            _raw = _json.load(_f)
+        actual_dec_layers = (
+            _raw.get("decoder", {}).get("decoder_layers")
+            or NougatConfig().decoder_layer
+        )
+
+        _orig_init = NougatConfig.__init__
+
+        def _patched_init(self_cfg, *a, **kw):
+            kw.setdefault("decoder_layer", actual_dec_layers)
+            _orig_init(self_cfg, *a, **kw)
+
+        NougatConfig.__init__ = _patched_init
+        try:
+            model = NougatModel.from_pretrained(
+                self._model, use_safetensors=False,
+            )
+        finally:
+            NougatConfig.__init__ = _orig_init
+
+        # Newer transformers nests decoder keys under an extra ".model."
+        # prefix.  Re-load decoder weights with the corrected key mapping.
+        ckpt_path = hf_hub_download(self._model, "pytorch_model.bin")
+        ckpt = torch.load(ckpt_path, map_location="cpu")
+
+        decoder_state: dict[str, torch.Tensor] = {}
+        for k, v in ckpt.items():
+            if not k.startswith("decoder.model."):
+                continue
+            sub_key = k[len("decoder.model."):]
+            decoder_state["model." + sub_key] = v
+        if "model.decoder.embed_tokens.weight" in decoder_state:
+            decoder_state["lm_head.weight"] = decoder_state[
+                "model.decoder.embed_tokens.weight"
+            ]
+
+        # Handle embed_positions shape differences
+        model_sd = model.decoder.model.state_dict()
+        for k in list(decoder_state.keys()):
+            if k in model_sd and decoder_state[k].shape != model_sd[k].shape:
+                cs, ms = decoder_state[k].shape, model_sd[k].shape
+                if len(cs) == 2 and len(ms) == 2 and cs[1] == ms[1]:
+                    if cs[0] < ms[0]:
+                        padded = torch.zeros(ms)
+                        padded[: cs[0]] = decoder_state[k]
+                        decoder_state[k] = padded
+                    else:
+                        decoder_state[k] = decoder_state[k][: ms[0]]
+                else:
+                    del decoder_state[k]
+
+        model.decoder.model.load_state_dict(decoder_state, strict=False)
+
         model = move_to_device(model)
         model.eval()
 
         dataset = LazyDataset(
-            file_path, None, None,
+            file_path,
             model.encoder.prepare_input,
         )
         dataloader = DataLoader(
@@ -116,15 +178,20 @@ class NougatEngine(DocumentEngine):
 
         pages_text: list[str] = []
         for idx, sample in enumerate(dataloader):
-            sample = sample.to(model.device)
+            if isinstance(sample, (list, tuple)):
+                image_tensor = sample[0]
+            else:
+                image_tensor = sample
 
-            if sample is None:
+            if image_tensor is None:
                 pages_text.append("")
                 continue
 
+            image_tensor = image_tensor.to(model.device)
+
             with torch.no_grad():
                 output = model.inference(
-                    image_tensors=sample,
+                    image_tensors=image_tensor,
                     early_stopping=not self._no_skipping,
                 )
 

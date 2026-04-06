@@ -97,13 +97,11 @@ class SuryaEngine(DocumentEngine):
         ext = path.suffix.lstrip(".").lower()
 
         if ext == "pdf":
-            from surya.input.processing import open_pdf
+            from surya.input.processing import open_pdf, get_page_images
 
             doc = open_pdf(file_path)
-            # Get PIL images from PDF pages
-            from surya.input.processing import get_page_images
-
-            images = get_page_images(doc)
+            page_count = len(doc)
+            images = get_page_images(doc, list(range(page_count)))
             doc.close()
             return images
         else:
@@ -112,56 +110,38 @@ class SuryaEngine(DocumentEngine):
     def _do_process(
         self, file_path: str, output_format: OutputFormat
     ) -> tuple[str, int, dict]:
-        from surya.layout import batch_layout_detection
-        from surya.model.detection.model import load_model as load_det_model
-        from surya.model.detection.processor import load_processor as load_det_processor
-        from surya.model.recognition.model import load_model as load_rec_model
-        from surya.model.recognition.processor import load_processor as load_rec_processor
-        from surya.ocr import run_ocr
+        # Surya v0.17+ predictor-based API
+        from surya.detection import DetectionPredictor
+        from surya.foundation import FoundationPredictor
+        from surya.recognition import RecognitionPredictor
 
         images = self._load_images(file_path)
         page_count = len(images)
 
-        # Load models
-        det_processor = load_det_processor()
-        det_model = load_det_model()
-        rec_model = load_rec_model()
-        rec_processor = load_rec_processor()
+        det_predictor = DetectionPredictor()
+        foundation = FoundationPredictor()
+        rec_predictor = RecognitionPredictor(foundation)
 
-        # Run OCR
-        langs_per_page = [self._langs] * page_count
-        predictions = run_ocr(
-            images, langs_per_page, det_model, det_processor, rec_model, rec_processor
+        # Run OCR (detection + recognition)
+        predictions = rec_predictor(
+            images,
+            det_predictor=det_predictor,
         )
-
-        # Run layout detection
-        layout_predictions = batch_layout_detection(images, det_model, det_processor)
 
         # Build structured pages
         pages_data: list[dict] = []
-        for page_idx, (ocr_pred, layout_pred) in enumerate(
-            zip(predictions, layout_predictions)
-        ):
+        for page_idx, ocr_result in enumerate(predictions):
             lines = []
-            for line in ocr_pred.text_lines:
+            for line in ocr_result.text_lines:
                 lines.append({
                     "text": line.text,
-                    "bbox": line.bbox,
-                    "confidence": getattr(line, "confidence", None),
-                })
-
-            layout_elements = []
-            for elem in layout_pred.bboxes:
-                layout_elements.append({
-                    "label": elem.label,
-                    "bbox": elem.bbox,
-                    "confidence": getattr(elem, "confidence", None),
+                    "polygon": line.polygon,
+                    "confidence": line.confidence,
                 })
 
             pages_data.append({
                 "page": page_idx + 1,
                 "lines": lines,
-                "layout": layout_elements,
             })
 
         # Format output
@@ -188,7 +168,7 @@ class SuryaEngine(DocumentEngine):
                 )
             return "<html><body>" + "\n".join(html_parts) + "</body></html>"
 
-        # MARKDOWN / TEXT — group by layout labels
+        # MARKDOWN / TEXT
         md_parts = []
         for page in pages_data:
             page_lines: list[str] = []

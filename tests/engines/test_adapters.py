@@ -86,10 +86,12 @@ class TestMinerUEngine:
     @pytest.mark.asyncio
     async def test_process_returns_engine_result(self):
         """MinerU engine processes a PDF and returns a valid EngineResult."""
-        from docfold.engines.mineru_engine import MinerUEngine
-        from docfold.engines.base import EngineResult, OutputFormat
+        import os
+        import tempfile
         from unittest.mock import MagicMock, patch
-        import tempfile, os
+
+        from docfold.engines.base import EngineResult, OutputFormat
+        from docfold.engines.mineru_engine import MinerUEngine
 
         mock_pipe_result = MagicMock()
         mock_pipe_result.get_markdown.return_value = "# Hello\n\nExtracted content"
@@ -127,10 +129,12 @@ class TestMinerUEngine:
     @pytest.mark.asyncio
     async def test_process_ocr_mode_for_scanned_pdf(self):
         """MinerU uses OCR mode when PDF is classified as scanned."""
-        from docfold.engines.mineru_engine import MinerUEngine
-        from docfold.engines.base import OutputFormat
+        import os
+        import tempfile
         from unittest.mock import MagicMock, patch
-        import tempfile, os
+
+        from docfold.engines.base import OutputFormat
+        from docfold.engines.mineru_engine import MinerUEngine
 
         mock_pipe_result = MagicMock()
         mock_pipe_result.get_markdown.return_value = "OCR content"
@@ -165,10 +169,12 @@ class TestMinerUEngine:
     @pytest.mark.asyncio
     async def test_process_json_output_format(self):
         """MinerU returns content_list JSON when output_format is JSON."""
-        from docfold.engines.mineru_engine import MinerUEngine
-        from docfold.engines.base import OutputFormat
+        import os
+        import tempfile
         from unittest.mock import MagicMock, patch
-        import tempfile, os
+
+        from docfold.engines.base import OutputFormat
+        from docfold.engines.mineru_engine import MinerUEngine
 
         mock_pipe_result = MagicMock()
         mock_pipe_result.get_markdown.return_value = "md content"
@@ -204,10 +210,12 @@ class TestMinerUEngine:
     @pytest.mark.asyncio
     async def test_process_with_page_range(self):
         """MinerU respects start_page and end_page kwargs."""
-        from docfold.engines.mineru_engine import MinerUEngine
-        from docfold.engines.base import OutputFormat
+        import os
+        import tempfile
         from unittest.mock import MagicMock, patch
-        import tempfile, os
+
+        from docfold.engines.base import OutputFormat
+        from docfold.engines.mineru_engine import MinerUEngine
 
         mock_pipe_result = MagicMock()
         mock_pipe_result.get_markdown.return_value = "page content"
@@ -228,14 +236,16 @@ class TestMinerUEngine:
              patch("docfold.engines.mineru_engine.SupportedPdfParseMethod", mock_spm), \
              patch("docfold.engines.mineru_engine.FileBasedDataWriter"), \
              patch("docfold.engines.mineru_engine.doc_analyze"), \
-             patch("docfold.engines.mineru_engine.convert_pdf_bytes_to_bytes_by_pymupdf") as mock_convert:
+             patch(
+                "docfold.engines.mineru_engine.convert_pdf_bytes_to_bytes_by_pymupdf",
+             ) as mock_convert:
             mock_convert.return_value = b"%PDF-1.4 subset"
             e = MinerUEngine()
             with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
                 f.write(b"%PDF-1.4 minimal")
                 f.flush()
                 try:
-                    result = await e.process(
+                    await e.process(
                         f.name, OutputFormat.MARKDOWN,
                         start_page=2, end_page=5,
                     )
@@ -320,18 +330,22 @@ class TestMarkerLocalEngine:
     @pytest.mark.asyncio
     async def test_process_returns_engine_result(self):
         """MarkerLocal engine processes a PDF and returns a valid EngineResult."""
-        from docfold.engines.marker_local_engine import MarkerLocalEngine
-        from docfold.engines.base import EngineResult, OutputFormat
+        import os
+        import tempfile
         from unittest.mock import MagicMock, patch
-        import tempfile, os
+
+        from docfold.engines.base import EngineResult, OutputFormat
+        from docfold.engines.marker_local_engine import MarkerLocalEngine
 
         mock_rendered = MagicMock()
         mock_converter = MagicMock(return_value=mock_rendered)
 
-        with patch("docfold.engines.marker_local_engine._ensure_imports"), \
-             patch("docfold.engines.marker_local_engine.PdfConverter", return_value=mock_converter), \
-             patch("docfold.engines.marker_local_engine.create_model_dict", return_value={}), \
-             patch("docfold.engines.marker_local_engine.text_from_rendered", return_value=("# Extracted\n\nContent", {}, {})):
+        ml_prefix = "docfold.engines.marker_local_engine"
+        rendered_val = ("# Extracted\n\nContent", {}, {})
+        with patch(f"{ml_prefix}._ensure_imports"), \
+             patch(f"{ml_prefix}.PdfConverter", return_value=mock_converter), \
+             patch(f"{ml_prefix}.create_model_dict", return_value={}), \
+             patch(f"{ml_prefix}.text_from_rendered", return_value=rendered_val):
             e = MarkerLocalEngine()
             with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
                 f.write(b"%PDF-1.4 minimal")
@@ -349,18 +363,23 @@ class TestMarkerLocalEngine:
     @pytest.mark.asyncio
     async def test_process_json_output(self):
         """MarkerLocal returns JSON wrapping markdown content."""
-        from docfold.engines.marker_local_engine import MarkerLocalEngine
-        from docfold.engines.base import OutputFormat
+        import json
+        import os
+        import tempfile
         from unittest.mock import MagicMock, patch
-        import tempfile, os, json
+
+        from docfold.engines.base import OutputFormat
+        from docfold.engines.marker_local_engine import MarkerLocalEngine
 
         mock_rendered = MagicMock()
         mock_converter = MagicMock(return_value=mock_rendered)
 
-        with patch("docfold.engines.marker_local_engine._ensure_imports"), \
-             patch("docfold.engines.marker_local_engine.PdfConverter", return_value=mock_converter), \
-             patch("docfold.engines.marker_local_engine.create_model_dict", return_value={}), \
-             patch("docfold.engines.marker_local_engine.text_from_rendered", return_value=("hello", {}, {"img.png": b"data"})):
+        ml_prefix = "docfold.engines.marker_local_engine"
+        rendered_val = ("hello", {}, {"img.png": b"data"})
+        with patch(f"{ml_prefix}._ensure_imports"), \
+             patch(f"{ml_prefix}.PdfConverter", return_value=mock_converter), \
+             patch(f"{ml_prefix}.create_model_dict", return_value={}), \
+             patch(f"{ml_prefix}.text_from_rendered", return_value=rendered_val):
             e = MarkerLocalEngine()
             with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
                 f.write(b"%PDF-1.4 minimal")

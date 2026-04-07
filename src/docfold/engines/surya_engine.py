@@ -97,7 +97,7 @@ class SuryaEngine(DocumentEngine):
         ext = path.suffix.lstrip(".").lower()
 
         if ext == "pdf":
-            from surya.input.processing import open_pdf, get_page_images
+            from surya.input.processing import get_page_images, open_pdf
 
             doc = open_pdf(file_path)
             page_count = len(doc)

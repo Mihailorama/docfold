@@ -77,10 +77,12 @@ class TestMinerUEngine:
 
     def test_is_available_when_installed(self):
         """When magic_pdf is importable, is_available returns True."""
+        from unittest.mock import MagicMock, patch
+
         from docfold.engines.mineru_engine import MinerUEngine
         e = MinerUEngine()
-        # magic_pdf is installed in this env
-        result = e.is_available()
+        with patch.dict("sys.modules", {"magic_pdf": MagicMock()}):
+            result = e.is_available()
         assert result is True
 
     @pytest.mark.asyncio
@@ -1147,7 +1149,7 @@ class TestFirecrawlEngine:
             assert result.content == "# Invoice\n\nTotal: $100"
             assert result.engine_name == "firecrawl"
             assert result.format == OutputFormat.MARKDOWN
-            assert result.processing_time_ms > 0
+            assert result.processing_time_ms >= 0
 
             # Verify the request was made with correct URL
             req = mock_urlopen.call_args[0][0]

@@ -117,16 +117,15 @@ class TestMinerUEngine:
             e = MinerUEngine()
             with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
                 f.write(b"%PDF-1.4 minimal")
-                f.flush()
-                try:
-                    result = await e.process(f.name, OutputFormat.MARKDOWN)
-                    assert isinstance(result, EngineResult)
-                    assert result.engine_name == "mineru"
-                    assert result.content == "# Hello\n\nExtracted content"
-                    assert result.format == OutputFormat.MARKDOWN
-                    assert result.processing_time_ms >= 0
-                finally:
-                    os.unlink(f.name)
+            try:
+                result = await e.process(f.name, OutputFormat.MARKDOWN)
+                assert isinstance(result, EngineResult)
+                assert result.engine_name == "mineru"
+                assert result.content == "# Hello\n\nExtracted content"
+                assert result.format == OutputFormat.MARKDOWN
+                assert result.processing_time_ms >= 0
+            finally:
+                os.unlink(f.name)
 
     @pytest.mark.asyncio
     async def test_process_ocr_mode_for_scanned_pdf(self):
@@ -160,13 +159,12 @@ class TestMinerUEngine:
             e = MinerUEngine()
             with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
                 f.write(b"%PDF-1.4 minimal")
-                f.flush()
-                try:
-                    result = await e.process(f.name, OutputFormat.MARKDOWN)
-                    assert result.content == "OCR content"
-                    mock_infer_result.pipe_ocr_mode.assert_called_once()
-                finally:
-                    os.unlink(f.name)
+            try:
+                result = await e.process(f.name, OutputFormat.MARKDOWN)
+                assert result.content == "OCR content"
+                mock_infer_result.pipe_ocr_mode.assert_called_once()
+            finally:
+                os.unlink(f.name)
 
     @pytest.mark.asyncio
     async def test_process_json_output_format(self):
@@ -201,13 +199,12 @@ class TestMinerUEngine:
             e = MinerUEngine()
             with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
                 f.write(b"%PDF-1.4 minimal")
-                f.flush()
-                try:
-                    result = await e.process(f.name, OutputFormat.JSON)
-                    assert result.format == OutputFormat.JSON
-                    assert "text" in result.content
-                finally:
-                    os.unlink(f.name)
+            try:
+                result = await e.process(f.name, OutputFormat.JSON)
+                assert result.format == OutputFormat.JSON
+                assert "text" in result.content
+            finally:
+                os.unlink(f.name)
 
     @pytest.mark.asyncio
     async def test_process_with_page_range(self):
@@ -245,15 +242,14 @@ class TestMinerUEngine:
             e = MinerUEngine()
             with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
                 f.write(b"%PDF-1.4 minimal")
-                f.flush()
-                try:
-                    await e.process(
-                        f.name, OutputFormat.MARKDOWN,
-                        start_page=2, end_page=5,
-                    )
-                    mock_convert.assert_called_once()
-                finally:
-                    os.unlink(f.name)
+            try:
+                await e.process(
+                    f.name, OutputFormat.MARKDOWN,
+                    start_page=2, end_page=5,
+                )
+                mock_convert.assert_called_once()
+            finally:
+                os.unlink(f.name)
 
 
 class TestMarkerEngine:
@@ -351,16 +347,15 @@ class TestMarkerLocalEngine:
             e = MarkerLocalEngine()
             with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
                 f.write(b"%PDF-1.4 minimal")
-                f.flush()
-                try:
-                    result = await e.process(f.name, OutputFormat.MARKDOWN)
-                    assert isinstance(result, EngineResult)
-                    assert result.engine_name == "marker_local"
-                    assert result.content == "# Extracted\n\nContent"
-                    assert result.format == OutputFormat.MARKDOWN
-                    assert result.processing_time_ms >= 0
-                finally:
-                    os.unlink(f.name)
+            try:
+                result = await e.process(f.name, OutputFormat.MARKDOWN)
+                assert isinstance(result, EngineResult)
+                assert result.engine_name == "marker_local"
+                assert result.content == "# Extracted\n\nContent"
+                assert result.format == OutputFormat.MARKDOWN
+                assert result.processing_time_ms >= 0
+            finally:
+                os.unlink(f.name)
 
     @pytest.mark.asyncio
     async def test_process_json_output(self):
@@ -385,15 +380,14 @@ class TestMarkerLocalEngine:
             e = MarkerLocalEngine()
             with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
                 f.write(b"%PDF-1.4 minimal")
-                f.flush()
-                try:
-                    result = await e.process(f.name, OutputFormat.JSON)
-                    assert result.format == OutputFormat.JSON
-                    parsed = json.loads(result.content)
-                    assert parsed["markdown"] == "hello"
-                    assert "img.png" in parsed["images"]
-                finally:
-                    os.unlink(f.name)
+            try:
+                result = await e.process(f.name, OutputFormat.JSON)
+                assert result.format == OutputFormat.JSON
+                parsed = json.loads(result.content)
+                assert parsed["markdown"] == "hello"
+                assert "img.png" in parsed["images"]
+            finally:
+                os.unlink(f.name)
 
 
 class TestPyMuPDFEngine:

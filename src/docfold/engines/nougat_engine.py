@@ -93,20 +93,20 @@ class NougatEngine(DocumentEngine):
     def _do_process(
         self, file_path: str, output_format: OutputFormat
     ) -> tuple[str, int]:
-        import torch
-        from nougat import NougatModel
-        from nougat.postprocessing import markdown_compatible
-        from nougat.utils.dataset import LazyDataset
-        from nougat.utils.device import move_to_device
-        from torch.utils.data import DataLoader
-
         # NougatConfig defaults decoder_layer=10, but nougat-small only has
         # 4 decoder layers.  Read the actual value from the HF config and
         # monkey-patch NougatConfig so the model architecture matches the
         # checkpoint.
         import json as _json
+
+        import torch
         from huggingface_hub import hf_hub_download
+        from nougat import NougatModel
         from nougat.model import NougatConfig
+        from nougat.postprocessing import markdown_compatible
+        from nougat.utils.dataset import LazyDataset
+        from nougat.utils.device import move_to_device
+        from torch.utils.data import DataLoader
 
         cfg_path = hf_hub_download(self._model, "config.json")
         with open(cfg_path) as _f:

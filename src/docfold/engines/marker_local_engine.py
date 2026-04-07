@@ -32,10 +32,10 @@ def _ensure_imports() -> None:
     global PdfConverter, create_model_dict, text_from_rendered
     if PdfConverter is not None:
         return
-    from marker.converters.pdf import PdfConverter as _PC
+    from marker.converters.pdf import PdfConverter as _PdfConverter  # noqa: N814
     from marker.models import create_model_dict as _cmd
     from marker.output import text_from_rendered as _tfr
-    PdfConverter = _PC
+    PdfConverter = _PdfConverter
     create_model_dict = _cmd
     text_from_rendered = _tfr
 

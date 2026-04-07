@@ -33,9 +33,9 @@ def _ensure_imports() -> None:
     global doc_analyze, convert_pdf_bytes_to_bytes_by_pymupdf
     if PymuDocDataset is not None:
         return
-    from magic_pdf.config.enums import SupportedPdfParseMethod as _SPM
-    from magic_pdf.data.data_reader_writer import FileBasedDataWriter as _FBDW
-    from magic_pdf.data.dataset import PymuDocDataset as _PDD
+    from magic_pdf.config.enums import SupportedPdfParseMethod as _SPM  # noqa: N814
+    from magic_pdf.data.data_reader_writer import FileBasedDataWriter as _FBDW  # noqa: N814
+    from magic_pdf.data.dataset import PymuDocDataset as _PDD  # noqa: N814
     try:
         from magic_pdf.libs.pdf_utils import (
             convert_pdf_bytes_to_bytes_by_pymupdf as _convert,
@@ -124,8 +124,8 @@ class MinerUEngine(DocumentEngine):
         # PyTorch 2.6+ defaults weights_only=True which breaks loading
         # doclayout_yolo model weights containing custom classes.
         try:
-            import torch
             import doclayout_yolo.nn.tasks as _tasks
+            import torch
             _safe_classes = [
                 cls for cls in vars(_tasks).values()
                 if isinstance(cls, type)

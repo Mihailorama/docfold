@@ -1,14 +1,8 @@
 {
-  "benchmark_date": "2026-04-05 22:20:15",
+  "benchmark_date": "2026-04-16 20:28:11",
   "engines": [
     "pymupdf",
-    "mineru",
-    "marker_local",
-    "surya",
-    "docling",
-    "paddleocr",
-    "tesseract",
-    "unstructured"
+    "opendataloader"
   ],
   "documents": [
     {
@@ -34,7 +28,7 @@
   ],
   "summary": {
     "pymupdf": {
-      "avg_time_ms": 3.5,
+      "avg_time_ms": 6.8,
       "avg_cer": 0.0,
       "avg_wer": 0.0,
       "avg_bbox_count": 6.2,
@@ -43,7 +37,7 @@
       "results": [
         {
           "doc": "simple_text",
-          "time_ms": 6,
+          "time_ms": 13,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 5,
@@ -52,7 +46,7 @@
         },
         {
           "doc": "multi_page",
-          "time_ms": 2,
+          "time_ms": 5,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 4,
@@ -61,7 +55,7 @@
         },
         {
           "doc": "dense_financial",
-          "time_ms": 3,
+          "time_ms": 5,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 10,
@@ -70,7 +64,7 @@
         },
         {
           "doc": "mixed_formatting",
-          "time_ms": 3,
+          "time_ms": 4,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 6,
@@ -79,325 +73,49 @@
         }
       ]
     },
-    "mineru": {
-      "avg_time_ms": 18304.8,
-      "avg_cer": 0.0118,
-      "avg_wer": 0.0804,
-      "avg_bbox_count": 0.0,
+    "opendataloader": {
+      "avg_time_ms": 712.8,
+      "avg_cer": 0.0152,
+      "avg_wer": 0.047,
+      "avg_bbox_count": 2.5,
       "errors": 0,
       "successes": 4,
       "results": [
         {
           "doc": "simple_text",
-          "time_ms": 55848,
-          "cer": 0.0083,
+          "time_ms": 714,
+          "cer": 0.0165,
           "wer": 0.0556,
-          "bbox_count": 0,
-          "content_length": 122,
-          "pages": null
-        },
-        {
-          "doc": "multi_page",
-          "time_ms": 7511,
-          "cer": 0.0,
-          "wer": 0.0,
-          "bbox_count": 0,
-          "content_length": 300,
-          "pages": null
-        },
-        {
-          "doc": "dense_financial",
-          "time_ms": 4845,
-          "cer": 0.0235,
-          "wer": 0.2121,
-          "bbox_count": 0,
-          "content_length": 305,
-          "pages": null
-        },
-        {
-          "doc": "mixed_formatting",
-          "time_ms": 5015,
-          "cer": 0.0154,
-          "wer": 0.0541,
-          "bbox_count": 0,
-          "content_length": 264,
-          "pages": null
-        }
-      ]
-    },
-    "marker_local": {
-      "avg_time_ms": 39090.5,
-      "avg_cer": 0.0191,
-      "avg_wer": 0.0936,
-      "avg_bbox_count": 0.0,
-      "errors": 0,
-      "successes": 4,
-      "results": [
-        {
-          "doc": "simple_text",
-          "time_ms": 13760,
-          "cer": 0.0083,
-          "wer": 0.0556,
-          "bbox_count": 0,
-          "content_length": 122,
-          "pages": null
-        },
-        {
-          "doc": "multi_page",
-          "time_ms": 69190,
-          "cer": 0.01,
-          "wer": 0.0256,
-          "bbox_count": 0,
-          "content_length": 303,
-          "pages": null
-        },
-        {
-          "doc": "dense_financial",
-          "time_ms": 37193,
-          "cer": 0.0235,
-          "wer": 0.2121,
-          "bbox_count": 0,
-          "content_length": 305,
-          "pages": null
-        },
-        {
-          "doc": "mixed_formatting",
-          "time_ms": 36219,
-          "cer": 0.0346,
-          "wer": 0.0811,
-          "bbox_count": 0,
-          "content_length": 269,
-          "pages": null
-        }
-      ]
-    },
-    "surya": {
-      "avg_time_ms": 32959.2,
-      "avg_cer": 0.0135,
-      "avg_wer": 0.027,
-      "avg_bbox_count": 0.0,
-      "errors": 0,
-      "successes": 4,
-      "results": [
-        {
-          "doc": "simple_text",
-          "time_ms": 7741,
-          "cer": 0.0,
-          "wer": 0.0,
-          "bbox_count": 0,
-          "content_length": 121,
+          "bbox_count": 2,
+          "content_length": 123,
           "pages": 1
         },
         {
           "doc": "multi_page",
-          "time_ms": 45426,
-          "cer": 0.0,
-          "wer": 0.0,
-          "bbox_count": 0,
-          "content_length": 300,
+          "time_ms": 697,
+          "cer": 0.0133,
+          "wer": 0.0513,
+          "bbox_count": 2,
+          "content_length": 304,
           "pages": 2
         },
         {
           "doc": "dense_financial",
-          "time_ms": 35792,
+          "time_ms": 715,
           "cer": 0.0,
           "wer": 0.0,
-          "bbox_count": 0,
+          "bbox_count": 1,
           "content_length": 298,
           "pages": 1
         },
         {
           "doc": "mixed_formatting",
-          "time_ms": 42878,
-          "cer": 0.0538,
-          "wer": 0.1081,
-          "bbox_count": 0,
-          "content_length": 274,
+          "time_ms": 725,
+          "cer": 0.0308,
+          "wer": 0.0811,
+          "bbox_count": 5,
+          "content_length": 268,
           "pages": 1
-        }
-      ]
-    },
-    "docling": {
-      "avg_time_ms": 2601.0,
-      "avg_cer": 0.0173,
-      "avg_wer": 0.0406,
-      "avg_bbox_count": 0.0,
-      "errors": 0,
-      "successes": 4,
-      "results": [
-        {
-          "doc": "simple_text",
-          "time_ms": 3738,
-          "cer": 0.0248,
-          "wer": 0.0556,
-          "bbox_count": 0,
-          "content_length": 124,
-          "pages": null
-        },
-        {
-          "doc": "multi_page",
-          "time_ms": 3170,
-          "cer": 0.01,
-          "wer": 0.0256,
-          "bbox_count": 0,
-          "content_length": 303,
-          "pages": null
-        },
-        {
-          "doc": "dense_financial",
-          "time_ms": 1715,
-          "cer": 0.0,
-          "wer": 0.0,
-          "bbox_count": 0,
-          "content_length": 298,
-          "pages": null
-        },
-        {
-          "doc": "mixed_formatting",
-          "time_ms": 1781,
-          "cer": 0.0346,
-          "wer": 0.0811,
-          "bbox_count": 0,
-          "content_length": 269,
-          "pages": null
-        }
-      ]
-    },
-    "paddleocr": {
-      "avg_time_ms": 1617.2,
-      "avg_cer": 0.0018,
-      "avg_wer": 0.0132,
-      "avg_bbox_count": 0.0,
-      "errors": 0,
-      "successes": 4,
-      "results": [
-        {
-          "doc": "simple_text",
-          "time_ms": 1304,
-          "cer": 0.0,
-          "wer": 0.0,
-          "bbox_count": 0,
-          "content_length": 121,
-          "pages": null
-        },
-        {
-          "doc": "multi_page",
-          "time_ms": 2226,
-          "cer": 0.0033,
-          "wer": 0.0256,
-          "bbox_count": 0,
-          "content_length": 299,
-          "pages": null
-        },
-        {
-          "doc": "dense_financial",
-          "time_ms": 1391,
-          "cer": 0.0,
-          "wer": 0.0,
-          "bbox_count": 0,
-          "content_length": 298,
-          "pages": null
-        },
-        {
-          "doc": "mixed_formatting",
-          "time_ms": 1548,
-          "cer": 0.0038,
-          "wer": 0.027,
-          "bbox_count": 0,
-          "content_length": 261,
-          "pages": null
-        }
-      ]
-    },
-    "tesseract": {
-      "avg_time_ms": 1190.0,
-      "avg_cer": 0.0,
-      "avg_wer": 0.0,
-      "avg_bbox_count": 0.0,
-      "errors": 0,
-      "successes": 4,
-      "results": [
-        {
-          "doc": "simple_text",
-          "time_ms": 881,
-          "cer": 0.0,
-          "wer": 0.0,
-          "bbox_count": 0,
-          "content_length": 121,
-          "pages": null
-        },
-        {
-          "doc": "multi_page",
-          "time_ms": 1718,
-          "cer": 0.0,
-          "wer": 0.0,
-          "bbox_count": 0,
-          "content_length": 300,
-          "pages": null
-        },
-        {
-          "doc": "dense_financial",
-          "time_ms": 1106,
-          "cer": 0.0,
-          "wer": 0.0,
-          "bbox_count": 0,
-          "content_length": 298,
-          "pages": null
-        },
-        {
-          "doc": "mixed_formatting",
-          "time_ms": 1055,
-          "cer": 0.0,
-          "wer": 0.0,
-          "bbox_count": 0,
-          "content_length": 260,
-          "pages": null
-        }
-      ]
-    },
-    "unstructured": {
-      "avg_time_ms": 597.0,
-      "avg_cer": 0.0357,
-      "avg_wer": 0.1353,
-      "avg_bbox_count": 0.0,
-      "errors": 0,
-      "successes": 4,
-      "results": [
-        {
-          "doc": "simple_text",
-          "time_ms": 2213,
-          "cer": 0.0661,
-          "wer": 0.2222,
-          "bbox_count": 0,
-          "content_length": 129,
-          "pages": null
-        },
-        {
-          "doc": "multi_page",
-          "time_ms": 75,
-          "cer": 0.0067,
-          "wer": 0.0256,
-          "bbox_count": 0,
-          "content_length": 302,
-          "pages": null
-        },
-        {
-          "doc": "dense_financial",
-          "time_ms": 55,
-          "cer": 0.047,
-          "wer": 0.2121,
-          "bbox_count": 0,
-          "content_length": 312,
-          "pages": null
-        },
-        {
-          "doc": "mixed_formatting",
-          "time_ms": 45,
-          "cer": 0.0231,
-          "wer": 0.0811,
-          "bbox_count": 0,
-          "content_length": 266,
-          "pages": null
         }
       ]
     }

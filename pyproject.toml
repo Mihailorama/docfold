@@ -74,6 +74,10 @@ llamaparse = [
 liteparse = [
     # No Python deps — requires Node.js 18+ and: npm i -g @llamaindex/liteparse
 ]
+opendataloader = [
+    # Requires Java 11+ on PATH; JAR is bundled by the Python wheel.
+    "opendataloader-pdf>=2.2",
+]
 mistral-ocr = [
     "mistralai>=1.0",
 ]
@@ -112,7 +116,7 @@ evaluation = [
     "psutil>=5.9",         # Memory measurement
 ]
 all = [
-    "docfold[docling,mineru,marker,pymupdf,paddleocr,tesseract,easyocr,unstructured,llamaparse,liteparse,mistral-ocr,textract,google-docai,azure-docint,nougat,chandra,surya,firecrawl,evaluation]",
+    "docfold[docling,mineru,marker,pymupdf,paddleocr,tesseract,easyocr,unstructured,llamaparse,liteparse,opendataloader,mistral-ocr,textract,google-docai,azure-docint,nougat,chandra,surya,firecrawl,evaluation]",
     # Note: zerox excluded from [all] — py-zerox requires Python 3.11+
     # Install separately: pip install docfold[zerox]
 ]

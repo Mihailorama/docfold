@@ -197,6 +197,7 @@ async def main():
     from docfold.engines.marker_local_engine import MarkerLocalEngine
     from docfold.engines.mineru_engine import MinerUEngine
     from docfold.engines.nougat_engine import NougatEngine
+    from docfold.engines.opendataloader_engine import OpenDataLoaderEngine
     from docfold.engines.paddleocr_engine import PaddleOCREngine
     from docfold.engines.pymupdf_engine import PyMuPDFEngine
     from docfold.engines.surya_engine import SuryaEngine
@@ -210,6 +211,7 @@ async def main():
     candidates = [
         (PyMuPDFEngine(), "pip install pymupdf"),
         (LiteParseEngine(ocr_enabled=False), "npm i -g @llamaindex/liteparse"),
+        (OpenDataLoaderEngine(), "pip install docfold[opendataloader] (needs Java 11+)"),
         (MinerUEngine(), "pip install docfold[mineru]"),
         (MarkerLocalEngine(), "pip install marker-pdf"),
         (SuryaEngine(), "pip install surya-ocr"),

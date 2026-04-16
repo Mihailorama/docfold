@@ -37,6 +37,57 @@ def create_text_pdf(path: str, pages: list[dict]) -> None:
     doc.close()
 
 
+def _find_arabic_font() -> tuple[str, str] | None:
+    """Return (font_dir, ttf_filename) for an Arabic-capable TTF, or None."""
+    candidates = [
+        ("/usr/share/fonts/truetype/noto", "NotoNaskhArabic-Regular.ttf"),
+        ("/usr/share/fonts/noto", "NotoNaskhArabic-Regular.ttf"),
+        ("/usr/share/fonts/truetype/noto", "NotoSansArabic-Regular.ttf"),
+    ]
+    for d, fname in candidates:
+        if os.path.exists(os.path.join(d, fname)):
+            return d, fname
+    return None
+
+
+def create_arabic_pdf(path: str, html_body: str) -> None:
+    """Render an Arabic HTML snippet to PDF using Noto Naskh Arabic.
+
+    PyMuPDF's ``insert_htmlbox`` handles shaping and RTL bidi correctly when
+    given an Arabic-capable TTF via ``Archive``. Requires the font to be
+    installed on the system (see ``_find_arabic_font``).
+    """
+    import fitz
+
+    font_info = _find_arabic_font()
+    if font_info is None:
+        raise RuntimeError(
+            "No Arabic font found. Install fonts-noto-core "
+            "(apt-get install fonts-noto-core)."
+        )
+    font_dir, ttf = font_info
+
+    doc = fitz.open()
+    page = doc.new_page(width=612, height=792)
+    archive = fitz.Archive(font_dir)
+    css = f"@font-face {{ font-family: 'ArabicBench'; src: url({ttf}); }}"
+    page.insert_htmlbox(fitz.Rect(36, 36, 576, 756), html_body, css=css, archive=archive)
+    doc.save(path)
+    doc.close()
+
+
+def _extract_ground_truth(pdf_path: str) -> str:
+    """Return PyMuPDF's extracted text — used as ground truth for docs whose
+    authoritative form depends on font shaping (e.g. Arabic).
+    """
+    import fitz
+
+    doc = fitz.open(pdf_path)
+    text = "\n".join(p.get_text() for p in doc)
+    doc.close()
+    return text
+
+
 def generate_benchmark_documents(tmpdir: str) -> list[dict]:
     """Generate synthetic PDFs and return metadata with ground truth."""
     documents = []
@@ -129,6 +180,33 @@ def generate_benchmark_documents(tmpdir: str) -> list[dict]:
         "pages": 1,
         "category": "report",
     })
+
+    # --- Doc 5: Arabic (RTL + shaping) ---
+    # PDFs store Arabic in shaped presentation forms and reverse visual order.
+    # We use PyMuPDF's extraction of the generated PDF as ground truth — this
+    # measures whether *other* engines agree on the same text, not whether
+    # they normalize to logical Unicode (a harder task).
+    if _find_arabic_font() is not None:
+        doc5_path = os.path.join(tmpdir, "arabic_report.pdf")
+        arabic_html = (
+            '<div lang="ar" dir="rtl" '
+            "style=\"font-family:'ArabicBench';font-size:14pt;line-height:1.8;\">"
+            "<h1>تقرير سنوي 2024</h1>"
+            "<p>حققت الشركة نموا قياسيا هذا العام بإيرادات تجاوزت التوقعات.</p>"
+            "<p>بلغت نسبة رضا العملاء 94 بالمئة.</p>"
+            "<p>وصل معدل الاحتفاظ بالموظفين إلى 96 بالمئة.</p>"
+            "</div>"
+        )
+        create_arabic_pdf(doc5_path, arabic_html)
+        documents.append({
+            "name": "arabic_report",
+            "path": doc5_path,
+            "ground_truth": _extract_ground_truth(doc5_path),
+            "pages": 1,
+            "category": "rtl",
+        })
+    else:
+        print("WARNING: skipping arabic_report doc (no Arabic font on system)")
 
     return documents
 

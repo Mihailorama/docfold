@@ -1,5 +1,5 @@
 {
-  "benchmark_date": "2026-04-16 20:28:11",
+  "benchmark_date": "2026-04-16 21:00:45",
   "engines": [
     "pymupdf",
     "opendataloader"
@@ -24,20 +24,25 @@
       "name": "mixed_formatting",
       "pages": 1,
       "category": "report"
+    },
+    {
+      "name": "arabic_report",
+      "pages": 1,
+      "category": "rtl"
     }
   ],
   "summary": {
     "pymupdf": {
-      "avg_time_ms": 6.8,
+      "avg_time_ms": 6.2,
       "avg_cer": 0.0,
       "avg_wer": 0.0,
-      "avg_bbox_count": 6.2,
+      "avg_bbox_count": 5.8,
       "errors": 0,
-      "successes": 4,
+      "successes": 5,
       "results": [
         {
           "doc": "simple_text",
-          "time_ms": 13,
+          "time_ms": 12,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 5,
@@ -70,20 +75,29 @@
           "bbox_count": 6,
           "content_length": 260,
           "pages": 1
+        },
+        {
+          "doc": "arabic_report",
+          "time_ms": 5,
+          "cer": 0.0,
+          "wer": 0.0,
+          "bbox_count": 4,
+          "content_length": 151,
+          "pages": 1
         }
       ]
     },
     "opendataloader": {
-      "avg_time_ms": 712.8,
-      "avg_cer": 0.0152,
-      "avg_wer": 0.047,
-      "avg_bbox_count": 2.5,
+      "avg_time_ms": 699.8,
+      "avg_cer": 0.1856,
+      "avg_wer": 0.2536,
+      "avg_bbox_count": 2.8,
       "errors": 0,
-      "successes": 4,
+      "successes": 5,
       "results": [
         {
           "doc": "simple_text",
-          "time_ms": 714,
+          "time_ms": 709,
           "cer": 0.0165,
           "wer": 0.0556,
           "bbox_count": 2,
@@ -92,7 +106,7 @@
         },
         {
           "doc": "multi_page",
-          "time_ms": 697,
+          "time_ms": 698,
           "cer": 0.0133,
           "wer": 0.0513,
           "bbox_count": 2,
@@ -101,7 +115,7 @@
         },
         {
           "doc": "dense_financial",
-          "time_ms": 715,
+          "time_ms": 699,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 1,
@@ -110,11 +124,20 @@
         },
         {
           "doc": "mixed_formatting",
-          "time_ms": 725,
+          "time_ms": 698,
           "cer": 0.0308,
           "wer": 0.0811,
           "bbox_count": 5,
           "content_length": 268,
+          "pages": 1
+        },
+        {
+          "doc": "arabic_report",
+          "time_ms": 695,
+          "cer": 0.8675,
+          "wer": 1.08,
+          "bbox_count": 4,
+          "content_length": 151,
           "pages": 1
         }
       ]

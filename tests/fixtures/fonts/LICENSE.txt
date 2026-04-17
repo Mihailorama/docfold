@@ -1,0 +1,6 @@
+Noto Naskh Arabic is licensed under the SIL Open Font License, Version 1.1.
+See https://fonts.google.com/noto/specimen/Noto+Naskh+Arabic and
+https://scripts.sil.org/OFL for the full license text.
+
+Bundled here for use as a deterministic, reproducible font fixture in the
+docfold benchmark (arabic_report document).

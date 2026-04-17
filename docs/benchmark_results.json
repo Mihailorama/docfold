@@ -1,5 +1,5 @@
 {
-  "benchmark_date": "2026-04-16 21:00:45",
+  "benchmark_date": "2026-04-17 09:16:56",
   "engines": [
     "pymupdf",
     "opendataloader"
@@ -33,7 +33,7 @@
   ],
   "summary": {
     "pymupdf": {
-      "avg_time_ms": 6.2,
+      "avg_time_ms": 8.0,
       "avg_cer": 0.0,
       "avg_wer": 0.0,
       "avg_bbox_count": 5.8,
@@ -42,7 +42,7 @@
       "results": [
         {
           "doc": "simple_text",
-          "time_ms": 12,
+          "time_ms": 17,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 5,
@@ -60,7 +60,7 @@
         },
         {
           "doc": "dense_financial",
-          "time_ms": 5,
+          "time_ms": 7,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 10,
@@ -78,7 +78,7 @@
         },
         {
           "doc": "arabic_report",
-          "time_ms": 5,
+          "time_ms": 7,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 4,
@@ -88,7 +88,7 @@
       ]
     },
     "opendataloader": {
-      "avg_time_ms": 699.8,
+      "avg_time_ms": 1380.0,
       "avg_cer": 0.1856,
       "avg_wer": 0.2536,
       "avg_bbox_count": 2.8,
@@ -97,7 +97,7 @@
       "results": [
         {
           "doc": "simple_text",
-          "time_ms": 709,
+          "time_ms": 3339,
           "cer": 0.0165,
           "wer": 0.0556,
           "bbox_count": 2,
@@ -106,7 +106,7 @@
         },
         {
           "doc": "multi_page",
-          "time_ms": 698,
+          "time_ms": 833,
           "cer": 0.0133,
           "wer": 0.0513,
           "bbox_count": 2,
@@ -115,7 +115,7 @@
         },
         {
           "doc": "dense_financial",
-          "time_ms": 699,
+          "time_ms": 896,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 1,
@@ -124,7 +124,7 @@
         },
         {
           "doc": "mixed_formatting",
-          "time_ms": 698,
+          "time_ms": 856,
           "cer": 0.0308,
           "wer": 0.0811,
           "bbox_count": 5,
@@ -133,7 +133,7 @@
         },
         {
           "doc": "arabic_report",
-          "time_ms": 695,
+          "time_ms": 976,
           "cer": 0.8675,
           "wer": 1.08,
           "bbox_count": 4,

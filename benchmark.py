@@ -38,7 +38,19 @@ def create_text_pdf(path: str, pages: list[dict]) -> None:
 
 
 def _find_arabic_font() -> tuple[str, str] | None:
-    """Return (font_dir, ttf_filename) for an Arabic-capable TTF, or None."""
+    """Return (font_dir, ttf_filename) for an Arabic-capable TTF.
+
+    Prefers the bundled ``tests/fixtures/fonts/NotoNaskhArabic-Regular.ttf``
+    (shipped under OFL-1.1) so the benchmark is reproducible on any host.
+    Falls back to common system paths if the fixture is missing.
+    """
+    bundled_dir = os.path.join(
+        os.path.dirname(__file__), "tests", "fixtures", "fonts"
+    )
+    bundled_ttf = "NotoNaskhArabic-Regular.ttf"
+    if os.path.exists(os.path.join(bundled_dir, bundled_ttf)):
+        return bundled_dir, bundled_ttf
+
     candidates = [
         ("/usr/share/fonts/truetype/noto", "NotoNaskhArabic-Regular.ttf"),
         ("/usr/share/fonts/noto", "NotoNaskhArabic-Regular.ttf"),
@@ -54,16 +66,16 @@ def create_arabic_pdf(path: str, html_body: str) -> None:
     """Render an Arabic HTML snippet to PDF using Noto Naskh Arabic.
 
     PyMuPDF's ``insert_htmlbox`` handles shaping and RTL bidi correctly when
-    given an Arabic-capable TTF via ``Archive``. Requires the font to be
-    installed on the system (see ``_find_arabic_font``).
+    given an Arabic-capable TTF via ``Archive``. The font is bundled under
+    ``tests/fixtures/fonts/`` so this always works.
     """
     import fitz
 
     font_info = _find_arabic_font()
     if font_info is None:
         raise RuntimeError(
-            "No Arabic font found. Install fonts-noto-core "
-            "(apt-get install fonts-noto-core)."
+            "Arabic font fixture missing: "
+            "tests/fixtures/fonts/NotoNaskhArabic-Regular.ttf"
         )
     font_dir, ttf = font_info
 
@@ -186,27 +198,24 @@ def generate_benchmark_documents(tmpdir: str) -> list[dict]:
     # We use PyMuPDF's extraction of the generated PDF as ground truth — this
     # measures whether *other* engines agree on the same text, not whether
     # they normalize to logical Unicode (a harder task).
-    if _find_arabic_font() is not None:
-        doc5_path = os.path.join(tmpdir, "arabic_report.pdf")
-        arabic_html = (
-            '<div lang="ar" dir="rtl" '
-            "style=\"font-family:'ArabicBench';font-size:14pt;line-height:1.8;\">"
-            "<h1>تقرير سنوي 2024</h1>"
-            "<p>حققت الشركة نموا قياسيا هذا العام بإيرادات تجاوزت التوقعات.</p>"
-            "<p>بلغت نسبة رضا العملاء 94 بالمئة.</p>"
-            "<p>وصل معدل الاحتفاظ بالموظفين إلى 96 بالمئة.</p>"
-            "</div>"
-        )
-        create_arabic_pdf(doc5_path, arabic_html)
-        documents.append({
-            "name": "arabic_report",
-            "path": doc5_path,
-            "ground_truth": _extract_ground_truth(doc5_path),
-            "pages": 1,
-            "category": "rtl",
-        })
-    else:
-        print("WARNING: skipping arabic_report doc (no Arabic font on system)")
+    doc5_path = os.path.join(tmpdir, "arabic_report.pdf")
+    arabic_html = (
+        '<div lang="ar" dir="rtl" '
+        "style=\"font-family:'ArabicBench';font-size:14pt;line-height:1.8;\">"
+        "<h1>تقرير سنوي 2024</h1>"
+        "<p>حققت الشركة نموا قياسيا هذا العام بإيرادات تجاوزت التوقعات.</p>"
+        "<p>بلغت نسبة رضا العملاء 94 بالمئة.</p>"
+        "<p>وصل معدل الاحتفاظ بالموظفين إلى 96 بالمئة.</p>"
+        "</div>"
+    )
+    create_arabic_pdf(doc5_path, arabic_html)
+    documents.append({
+        "name": "arabic_report",
+        "path": doc5_path,
+        "ground_truth": _extract_ground_truth(doc5_path),
+        "pages": 1,
+        "category": "rtl",
+    })
 
     return documents
 

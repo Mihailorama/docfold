@@ -1,6 +1,20 @@
-Noto Naskh Arabic is licensed under the SIL Open Font License, Version 1.1.
-See https://fonts.google.com/noto/specimen/Noto+Naskh+Arabic and
-https://scripts.sil.org/OFL for the full license text.
+Benchmark font fixtures — all bundled Noto fonts are licensed under the
+SIL Open Font License, Version 1.1 (OFL-1.1).
 
-Bundled here for use as a deterministic, reproducible font fixture in the
-docfold benchmark (arabic_report document).
+Files
+-----
+- NotoNaskhArabic-Regular.ttf — full Noto Naskh Arabic Regular
+- NotoSansCJKsc-Regular-subset.ttf — Noto Sans CJK SC Regular, subsetted to
+  the glyphs used in the Chinese benchmark document only
+- NotoSansHebrew-Regular-subset.ttf — Noto Sans Hebrew Regular, subsetted to
+  the glyphs used in the Hebrew benchmark document only
+
+Sources
+-------
+- https://fonts.google.com/noto/specimen/Noto+Naskh+Arabic
+- https://fonts.google.com/noto/specimen/Noto+Sans+Simplified+Chinese
+- https://fonts.google.com/noto/specimen/Noto+Sans+Hebrew
+- OFL license text: https://scripts.sil.org/OFL
+
+Subsetting was done with fontTools (``fontTools.subset.Subsetter``) preserving
+all OpenType layout features so shaping / bidi still work.

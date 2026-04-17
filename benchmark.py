@@ -37,55 +37,76 @@ def create_text_pdf(path: str, pages: list[dict]) -> None:
     doc.close()
 
 
-def _find_arabic_font() -> tuple[str, str] | None:
-    """Return (font_dir, ttf_filename) for an Arabic-capable TTF.
+_FIXTURE_FONT_DIR = os.path.join(
+    os.path.dirname(__file__), "tests", "fixtures", "fonts"
+)
 
-    Prefers the bundled ``tests/fixtures/fonts/NotoNaskhArabic-Regular.ttf``
-    (shipped under OFL-1.1) so the benchmark is reproducible on any host.
-    Falls back to common system paths if the fixture is missing.
+
+def _find_bundled_font(preferred: str, fallbacks: list[tuple[str, str]]) -> tuple[str, str] | None:
+    """Return ``(font_dir, ttf_name)`` for a font that exists on disk.
+
+    Prefers the bundled fixture under ``tests/fixtures/fonts/`` (shipped under
+    OFL-1.1) so the benchmark is reproducible on any host; falls back to
+    system paths only as a safety net.
     """
-    bundled_dir = os.path.join(
-        os.path.dirname(__file__), "tests", "fixtures", "fonts"
-    )
-    bundled_ttf = "NotoNaskhArabic-Regular.ttf"
-    if os.path.exists(os.path.join(bundled_dir, bundled_ttf)):
-        return bundled_dir, bundled_ttf
-
-    candidates = [
-        ("/usr/share/fonts/truetype/noto", "NotoNaskhArabic-Regular.ttf"),
-        ("/usr/share/fonts/noto", "NotoNaskhArabic-Regular.ttf"),
-        ("/usr/share/fonts/truetype/noto", "NotoSansArabic-Regular.ttf"),
-    ]
-    for d, fname in candidates:
+    if os.path.exists(os.path.join(_FIXTURE_FONT_DIR, preferred)):
+        return _FIXTURE_FONT_DIR, preferred
+    for d, fname in fallbacks:
         if os.path.exists(os.path.join(d, fname)):
             return d, fname
     return None
 
 
-def create_arabic_pdf(path: str, html_body: str) -> None:
-    """Render an Arabic HTML snippet to PDF using Noto Naskh Arabic.
+def _find_arabic_font() -> tuple[str, str] | None:
+    return _find_bundled_font(
+        "NotoNaskhArabic-Regular.ttf",
+        [
+            ("/usr/share/fonts/truetype/noto", "NotoNaskhArabic-Regular.ttf"),
+            ("/usr/share/fonts/noto", "NotoNaskhArabic-Regular.ttf"),
+            ("/usr/share/fonts/truetype/noto", "NotoSansArabic-Regular.ttf"),
+        ],
+    )
 
-    PyMuPDF's ``insert_htmlbox`` handles shaping and RTL bidi correctly when
-    given an Arabic-capable TTF via ``Archive``. The font is bundled under
-    ``tests/fixtures/fonts/`` so this always works.
+
+def _find_script_font(preferred: str) -> tuple[str, str] | None:
+    """Bundled fonts for non-Arabic scripts — no system fallback because the
+    subsetted TTF is what we tested against."""
+    return _find_bundled_font(preferred, [])
+
+
+def _render_html_pdf(path: str, html_body: str, font_info: tuple[str, str]) -> None:
+    """Generic HTML → PDF renderer using PyMuPDF's ``insert_htmlbox`` with
+    a bundled font archive. Handles shaping / bidi via HarfBuzz under the hood.
     """
     import fitz
 
+    font_dir, ttf = font_info
+    doc = fitz.open()
+    page = doc.new_page(width=612, height=792)
+    archive = fitz.Archive(font_dir)
+    css = f"@font-face {{ font-family: 'BenchFont'; src: url({ttf}); }}"
+    page.insert_htmlbox(fitz.Rect(36, 36, 576, 756), html_body, css=css, archive=archive)
+    doc.save(path)
+    doc.close()
+
+
+def create_arabic_pdf(path: str, html_body: str) -> None:
+    """Render an Arabic HTML snippet to PDF using Noto Naskh Arabic."""
     font_info = _find_arabic_font()
     if font_info is None:
         raise RuntimeError(
             "Arabic font fixture missing: "
             "tests/fixtures/fonts/NotoNaskhArabic-Regular.ttf"
         )
-    font_dir, ttf = font_info
+    _render_html_pdf(path, html_body, font_info)
 
-    doc = fitz.open()
-    page = doc.new_page(width=612, height=792)
-    archive = fitz.Archive(font_dir)
-    css = f"@font-face {{ font-family: 'ArabicBench'; src: url({ttf}); }}"
-    page.insert_htmlbox(fitz.Rect(36, 36, 576, 756), html_body, css=css, archive=archive)
-    doc.save(path)
-    doc.close()
+
+def create_script_pdf(path: str, html_body: str, font_ttf: str) -> None:
+    """Render an HTML snippet to PDF using a bundled script-specific font."""
+    font_info = _find_script_font(font_ttf)
+    if font_info is None:
+        raise RuntimeError(f"Font fixture missing: tests/fixtures/fonts/{font_ttf}")
+    _render_html_pdf(path, html_body, font_info)
 
 
 def _extract_ground_truth(pdf_path: str) -> str:
@@ -201,7 +222,7 @@ def generate_benchmark_documents(tmpdir: str) -> list[dict]:
     doc5_path = os.path.join(tmpdir, "arabic_report.pdf")
     arabic_html = (
         '<div lang="ar" dir="rtl" '
-        "style=\"font-family:'ArabicBench';font-size:14pt;line-height:1.8;\">"
+        "style=\"font-family:'BenchFont';font-size:14pt;line-height:1.8;\">"
         "<h1>تقرير سنوي 2024</h1>"
         "<p>حققت الشركة نموا قياسيا هذا العام بإيرادات تجاوزت التوقعات.</p>"
         "<p>بلغت نسبة رضا العملاء 94 بالمئة.</p>"
@@ -216,6 +237,54 @@ def generate_benchmark_documents(tmpdir: str) -> list[dict]:
         "pages": 1,
         "category": "rtl",
     })
+
+    # --- Doc 6: Simplified Chinese (CJK) ---
+    # CJK has no shaping and LTR, but tests that engines don't mangle
+    # multi-byte Unicode. Font is subsetted (60 KB) from Noto Sans CJK SC.
+    doc6_path = os.path.join(tmpdir, "chinese_report.pdf")
+    chinese_html = (
+        '<div lang="zh" dir="ltr" '
+        "style=\"font-family:'BenchFont';font-size:14pt;line-height:1.8;\">"
+        "<h1>2024年度报告</h1>"
+        "<p>公司今年实现了创纪录的增长，收入超出预期。</p>"
+        "<p>客户满意度达到了94%。</p>"
+        "<p>员工保留率达到96%，创公司历史新高。</p>"
+        "</div>"
+    )
+    create_script_pdf(doc6_path, chinese_html, "NotoSansCJKsc-Regular-subset.ttf")
+    documents.append({
+        "name": "chinese_report",
+        "path": doc6_path,
+        "ground_truth": _extract_ground_truth(doc6_path),
+        "pages": 1,
+        "category": "cjk",
+    })
+
+    # --- Doc 7: Hebrew (RTL, no shaping) ---
+    # Good contrast to Arabic: same RTL bidi, but no contextual shaping.
+    doc7_path = os.path.join(tmpdir, "hebrew_report.pdf")
+    hebrew_html = (
+        '<div lang="he" dir="rtl" '
+        "style=\"font-family:'BenchFont';font-size:14pt;line-height:1.8;\">"
+        "<h1>דוח שנתי 2024</h1>"
+        "<p>החברה השיגה צמיחה שיא השנה, עם הכנסות שעלו על הציפיות.</p>"
+        "<p>שביעות רצון הלקוחות הגיעה ל-94 אחוז.</p>"
+        "<p>שיעור שימור העובדים הגיע ל-96 אחוז.</p>"
+        "</div>"
+    )
+    create_script_pdf(doc7_path, hebrew_html, "NotoSansHebrew-Regular-subset.ttf")
+    documents.append({
+        "name": "hebrew_report",
+        "path": doc7_path,
+        "ground_truth": _extract_ground_truth(doc7_path),
+        "pages": 1,
+        "category": "rtl",
+    })
+
+    # NOTE: Devanagari and Thai are intentionally omitted. PyMuPDF's
+    # ``insert_htmlbox`` produces PDFs whose ToUnicode maps don't survive
+    # round-trip extraction for those scripts (null bytes, dropped matras).
+    # They need real-world fixture PDFs — see docs/tasks/ for a follow-up.
 
     return documents
 

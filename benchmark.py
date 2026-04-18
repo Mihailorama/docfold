@@ -37,6 +37,90 @@ def create_text_pdf(path: str, pages: list[dict]) -> None:
     doc.close()
 
 
+_FIXTURE_FONT_DIR = os.path.join(
+    os.path.dirname(__file__), "tests", "fixtures", "fonts"
+)
+
+
+def _find_bundled_font(preferred: str, fallbacks: list[tuple[str, str]]) -> tuple[str, str] | None:
+    """Return ``(font_dir, ttf_name)`` for a font that exists on disk.
+
+    Prefers the bundled fixture under ``tests/fixtures/fonts/`` (shipped under
+    OFL-1.1) so the benchmark is reproducible on any host; falls back to
+    system paths only as a safety net.
+    """
+    if os.path.exists(os.path.join(_FIXTURE_FONT_DIR, preferred)):
+        return _FIXTURE_FONT_DIR, preferred
+    for d, fname in fallbacks:
+        if os.path.exists(os.path.join(d, fname)):
+            return d, fname
+    return None
+
+
+def _find_arabic_font() -> tuple[str, str] | None:
+    return _find_bundled_font(
+        "NotoNaskhArabic-Regular.ttf",
+        [
+            ("/usr/share/fonts/truetype/noto", "NotoNaskhArabic-Regular.ttf"),
+            ("/usr/share/fonts/noto", "NotoNaskhArabic-Regular.ttf"),
+            ("/usr/share/fonts/truetype/noto", "NotoSansArabic-Regular.ttf"),
+        ],
+    )
+
+
+def _find_script_font(preferred: str) -> tuple[str, str] | None:
+    """Bundled fonts for non-Arabic scripts — no system fallback because the
+    subsetted TTF is what we tested against."""
+    return _find_bundled_font(preferred, [])
+
+
+def _render_html_pdf(path: str, html_body: str, font_info: tuple[str, str]) -> None:
+    """Generic HTML → PDF renderer using PyMuPDF's ``insert_htmlbox`` with
+    a bundled font archive. Handles shaping / bidi via HarfBuzz under the hood.
+    """
+    import fitz
+
+    font_dir, ttf = font_info
+    doc = fitz.open()
+    page = doc.new_page(width=612, height=792)
+    archive = fitz.Archive(font_dir)
+    css = f"@font-face {{ font-family: 'BenchFont'; src: url({ttf}); }}"
+    page.insert_htmlbox(fitz.Rect(36, 36, 576, 756), html_body, css=css, archive=archive)
+    doc.save(path)
+    doc.close()
+
+
+def create_arabic_pdf(path: str, html_body: str) -> None:
+    """Render an Arabic HTML snippet to PDF using Noto Naskh Arabic."""
+    font_info = _find_arabic_font()
+    if font_info is None:
+        raise RuntimeError(
+            "Arabic font fixture missing: "
+            "tests/fixtures/fonts/NotoNaskhArabic-Regular.ttf"
+        )
+    _render_html_pdf(path, html_body, font_info)
+
+
+def create_script_pdf(path: str, html_body: str, font_ttf: str) -> None:
+    """Render an HTML snippet to PDF using a bundled script-specific font."""
+    font_info = _find_script_font(font_ttf)
+    if font_info is None:
+        raise RuntimeError(f"Font fixture missing: tests/fixtures/fonts/{font_ttf}")
+    _render_html_pdf(path, html_body, font_info)
+
+
+def _extract_ground_truth(pdf_path: str) -> str:
+    """Return PyMuPDF's extracted text — used as ground truth for docs whose
+    authoritative form depends on font shaping (e.g. Arabic).
+    """
+    import fitz
+
+    doc = fitz.open(pdf_path)
+    text = "\n".join(p.get_text() for p in doc)
+    doc.close()
+    return text
+
+
 def generate_benchmark_documents(tmpdir: str) -> list[dict]:
     """Generate synthetic PDFs and return metadata with ground truth."""
     documents = []
@@ -130,6 +214,78 @@ def generate_benchmark_documents(tmpdir: str) -> list[dict]:
         "category": "report",
     })
 
+    # --- Doc 5: Arabic (RTL + shaping) ---
+    # PDFs store Arabic in shaped presentation forms and reverse visual order.
+    # We use PyMuPDF's extraction of the generated PDF as ground truth — this
+    # measures whether *other* engines agree on the same text, not whether
+    # they normalize to logical Unicode (a harder task).
+    doc5_path = os.path.join(tmpdir, "arabic_report.pdf")
+    arabic_html = (
+        '<div lang="ar" dir="rtl" '
+        "style=\"font-family:'BenchFont';font-size:14pt;line-height:1.8;\">"
+        "<h1>تقرير سنوي 2024</h1>"
+        "<p>حققت الشركة نموا قياسيا هذا العام بإيرادات تجاوزت التوقعات.</p>"
+        "<p>بلغت نسبة رضا العملاء 94 بالمئة.</p>"
+        "<p>وصل معدل الاحتفاظ بالموظفين إلى 96 بالمئة.</p>"
+        "</div>"
+    )
+    create_arabic_pdf(doc5_path, arabic_html)
+    documents.append({
+        "name": "arabic_report",
+        "path": doc5_path,
+        "ground_truth": _extract_ground_truth(doc5_path),
+        "pages": 1,
+        "category": "rtl",
+    })
+
+    # --- Doc 6: Simplified Chinese (CJK) ---
+    # CJK has no shaping and LTR, but tests that engines don't mangle
+    # multi-byte Unicode. Font is subsetted (60 KB) from Noto Sans CJK SC.
+    doc6_path = os.path.join(tmpdir, "chinese_report.pdf")
+    chinese_html = (
+        '<div lang="zh" dir="ltr" '
+        "style=\"font-family:'BenchFont';font-size:14pt;line-height:1.8;\">"
+        "<h1>2024年度报告</h1>"
+        "<p>公司今年实现了创纪录的增长，收入超出预期。</p>"
+        "<p>客户满意度达到了94%。</p>"
+        "<p>员工保留率达到96%，创公司历史新高。</p>"
+        "</div>"
+    )
+    create_script_pdf(doc6_path, chinese_html, "NotoSansCJKsc-Regular-subset.ttf")
+    documents.append({
+        "name": "chinese_report",
+        "path": doc6_path,
+        "ground_truth": _extract_ground_truth(doc6_path),
+        "pages": 1,
+        "category": "cjk",
+    })
+
+    # --- Doc 7: Hebrew (RTL, no shaping) ---
+    # Good contrast to Arabic: same RTL bidi, but no contextual shaping.
+    doc7_path = os.path.join(tmpdir, "hebrew_report.pdf")
+    hebrew_html = (
+        '<div lang="he" dir="rtl" '
+        "style=\"font-family:'BenchFont';font-size:14pt;line-height:1.8;\">"
+        "<h1>דוח שנתי 2024</h1>"
+        "<p>החברה השיגה צמיחה שיא השנה, עם הכנסות שעלו על הציפיות.</p>"
+        "<p>שביעות רצון הלקוחות הגיעה ל-94 אחוז.</p>"
+        "<p>שיעור שימור העובדים הגיע ל-96 אחוז.</p>"
+        "</div>"
+    )
+    create_script_pdf(doc7_path, hebrew_html, "NotoSansHebrew-Regular-subset.ttf")
+    documents.append({
+        "name": "hebrew_report",
+        "path": doc7_path,
+        "ground_truth": _extract_ground_truth(doc7_path),
+        "pages": 1,
+        "category": "rtl",
+    })
+
+    # NOTE: Devanagari and Thai are intentionally omitted. PyMuPDF's
+    # ``insert_htmlbox`` produces PDFs whose ToUnicode maps don't survive
+    # round-trip extraction for those scripts (null bytes, dropped matras).
+    # They need real-world fixture PDFs — see docs/tasks/ for a follow-up.
+
     return documents
 
 
@@ -197,6 +353,7 @@ async def main():
     from docfold.engines.marker_local_engine import MarkerLocalEngine
     from docfold.engines.mineru_engine import MinerUEngine
     from docfold.engines.nougat_engine import NougatEngine
+    from docfold.engines.opendataloader_engine import OpenDataLoaderEngine
     from docfold.engines.paddleocr_engine import PaddleOCREngine
     from docfold.engines.pymupdf_engine import PyMuPDFEngine
     from docfold.engines.surya_engine import SuryaEngine
@@ -210,6 +367,7 @@ async def main():
     candidates = [
         (PyMuPDFEngine(), "pip install pymupdf"),
         (LiteParseEngine(ocr_enabled=False), "npm i -g @llamaindex/liteparse"),
+        (OpenDataLoaderEngine(), "pip install docfold[opendataloader] (needs Java 11+)"),
         (MinerUEngine(), "pip install docfold[mineru]"),
         (MarkerLocalEngine(), "pip install marker-pdf"),
         (SuryaEngine(), "pip install surya-ocr"),

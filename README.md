@@ -22,6 +22,7 @@ Docfold is the open-source extraction engine from [Datatera.ai](https://datatera
 | [**MinerU**](https://github.com/opendatalab/MinerU) | ✅ | Local | AGPL | ★★★ | ★★★ | ★★★ | — | — | Slow | Free |
 | [**Marker**](https://www.datalab.to/) | ✅ | SaaS | Paid | ★★★ | ★★★ | ★★★ | ✅ | — | Fast | $$ |
 | [**PyMuPDF**](https://pymupdf.readthedocs.io/) | ✅ | Local | AGPL | ★★★ | ☆☆☆ | ★☆☆ | — | — | Ultra | Free |
+| [**OpenDataLoader**](https://github.com/opendataloader-project/opendataloader-pdf) | ✅ | Local | Apache | ★★★ | ☆☆☆ | ★★☆ | ✅ | — | Fast | Free |
 | [**PaddleOCR**](https://github.com/PaddlePaddle/PaddleOCR) | ✅ | Local | Apache | ★☆☆ | ★★★ | ★★☆ | — | ✅ | Medium | Free |
 | [**Tesseract**](https://github.com/tesseract-ocr/tesseract) | ✅ | Local | Apache | ★☆☆ | ★★☆ | ★☆☆ | — | — | Medium | Free |
 | [**EasyOCR**](https://github.com/JaidedAI/EasyOCR) | ✅ | Local | Apache | ★☆☆ | ★★★ | ☆☆☆ | — | ✅ | Medium | Free |
@@ -94,6 +95,7 @@ for name, res in results.items():
 | [**MinerU**](https://github.com/opendatalab/MinerU) | Local | AGPL-3.0 | PDF | Recommended | `pip install docfold[mineru]` |
 | [**Marker API**](https://www.datalab.to/) | SaaS | Paid | PDF, Office, images | N/A | `pip install docfold[marker]` |
 | [**PyMuPDF**](https://pymupdf.readthedocs.io/) | Local | AGPL-3.0 | PDF | No | `pip install docfold[pymupdf]` |
+| [**OpenDataLoader**](https://github.com/opendataloader-project/opendataloader-pdf) | Local | Apache-2.0 | PDF | No (needs Java 11+) | `pip install docfold[opendataloader]` |
 | [**PaddleOCR**](https://github.com/PaddlePaddle/PaddleOCR) | Local | Apache-2.0 | Images, scanned PDFs | Optional | `pip install docfold[paddleocr]` |
 | [**Tesseract**](https://github.com/tesseract-ocr/tesseract) | Local | Apache-2.0 | Images, scanned PDFs | No | `pip install docfold[tesseract]` |
 | [**EasyOCR**](https://github.com/JaidedAI/EasyOCR) | Local | Apache-2.0 | Images, scanned PDFs | Optional | `pip install docfold[easyocr]` |

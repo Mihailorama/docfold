@@ -351,6 +351,7 @@ async def main():
     from docfold.engines.easyocr_engine import EasyOCREngine
     from docfold.engines.liteparse_engine import LiteParseEngine
     from docfold.engines.marker_local_engine import MarkerLocalEngine
+    from docfold.engines.markitdown_engine import MarkItDownEngine
     from docfold.engines.mineru_engine import MinerUEngine
     from docfold.engines.nougat_engine import NougatEngine
     from docfold.engines.opendataloader_engine import OpenDataLoaderEngine
@@ -377,6 +378,7 @@ async def main():
         (PaddleOCREngine(), "pip install paddleocr"),
         (TesseractEngine(), "pip install pytesseract"),
         (UnstructuredEngine(), "pip install unstructured"),
+        (MarkItDownEngine(), "pip install docfold[markitdown]"),
     ]
 
     # Skip engines that hang on CPU for multi-doc benchmarks

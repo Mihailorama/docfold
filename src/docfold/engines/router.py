@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 _IMAGE_PRIORITY = [
     "chandra", "surya", "paddleocr", "tesseract", "easyocr", "docling", "liteparse",
     "mistral_ocr", "google_docai", "textract", "azure_docint", "zerox", "marker",
+    "markitdown",
 ]
 
 _EXTENSION_PRIORITY: dict[str, list[str]] = {
@@ -33,31 +34,32 @@ _EXTENSION_PRIORITY: dict[str, list[str]] = {
         "docling", "mineru", "chandra", "unstructured", "marker",
         "llamaparse", "liteparse", "mistral_ocr", "firecrawl", "google_docai",
         "azure_docint", "textract", "zerox", "nougat", "surya", "pymupdf",
-        "paddleocr", "tesseract", "easyocr",
+        "paddleocr", "tesseract", "easyocr", "markitdown",
     ],
     # --- Office ---
     "docx": [
         "docling", "marker", "unstructured", "llamaparse",
-        "liteparse", "firecrawl", "azure_docint",
+        "liteparse", "firecrawl", "azure_docint", "markitdown",
     ],
     "doc":  ["docling", "marker", "unstructured", "llamaparse", "liteparse", "azure_docint"],
-    "pptx": ["docling", "marker", "unstructured", "llamaparse", "liteparse", "azure_docint"],
+    "pptx": ["docling", "marker", "unstructured", "llamaparse", "liteparse", "azure_docint", "markitdown"],
     "ppt":  ["docling", "marker", "unstructured", "llamaparse", "liteparse", "azure_docint"],
-    "xlsx": ["docling", "marker", "unstructured", "llamaparse", "liteparse", "azure_docint"],
-    "xls":  ["docling", "marker", "unstructured", "llamaparse", "liteparse", "azure_docint"],
+    "xlsx": ["docling", "marker", "unstructured", "llamaparse", "liteparse", "azure_docint", "markitdown"],
+    "xls":  ["docling", "marker", "unstructured", "llamaparse", "liteparse", "azure_docint", "markitdown"],
     "odt":  ["marker", "unstructured"],
     "odp":  ["marker", "unstructured"],
     "ods":  ["marker", "unstructured"],
     # --- Web / markup ---
-    "html": ["docling", "firecrawl", "unstructured", "marker", "azure_docint"],
-    "htm":  ["docling", "firecrawl", "unstructured", "marker", "azure_docint"],
-    "xml":  ["firecrawl", "unstructured"],
-    "md":   ["unstructured"],
+    "html": ["docling", "firecrawl", "unstructured", "marker", "azure_docint", "markitdown"],
+    "htm":  ["docling", "firecrawl", "unstructured", "marker", "azure_docint", "markitdown"],
+    "xml":  ["firecrawl", "unstructured", "markitdown"],
+    "md":   ["unstructured", "markitdown"],
     "rst":  ["unstructured"],
-    "csv":  ["unstructured"],
-    "tsv":  ["unstructured"],
-    "txt":  ["unstructured"],
+    "csv":  ["unstructured", "markitdown"],
+    "tsv":  ["unstructured", "markitdown"],
+    "txt":  ["unstructured", "markitdown"],
     "rtf":  ["unstructured"],
+    "json": ["markitdown"],
     # --- Images ---
     "png":  _IMAGE_PRIORITY,
     "jpg":  _IMAGE_PRIORITY,
@@ -71,7 +73,13 @@ _EXTENSION_PRIORITY: dict[str, list[str]] = {
     "eml":  ["unstructured"],
     "msg":  ["unstructured"],
     # --- eBooks ---
-    "epub": ["unstructured", "marker"],
+    "epub": ["unstructured", "marker", "markitdown"],
+    # --- Audio (transcription) ---
+    "mp3": ["markitdown"],
+    "wav": ["markitdown"],
+    "m4a": ["markitdown"],
+    # --- Archives ---
+    "zip": ["markitdown"],
 }
 
 # Ultimate fallback when extension is unknown or missing from the map.
@@ -79,7 +87,7 @@ _DEFAULT_FALLBACK = [
     "docling", "mineru", "chandra", "unstructured", "marker",
     "llamaparse", "liteparse", "mistral_ocr", "google_docai", "azure_docint",
     "textract", "zerox", "nougat", "surya", "pymupdf", "paddleocr", "tesseract",
-    "easyocr",
+    "easyocr", "markitdown",
 ]
 
 

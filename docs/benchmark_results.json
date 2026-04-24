@@ -1,8 +1,8 @@
 {
-  "benchmark_date": "2026-04-17 10:17:34",
+  "benchmark_date": "2026-04-24 17:57:13",
   "engines": [
     "pymupdf",
-    "opendataloader"
+    "markitdown"
   ],
   "documents": [
     {
@@ -43,7 +43,7 @@
   ],
   "summary": {
     "pymupdf": {
-      "avg_time_ms": 6.4,
+      "avg_time_ms": 3.3,
       "avg_cer": 0.0,
       "avg_wer": 0.0,
       "avg_bbox_count": 5.3,
@@ -52,7 +52,7 @@
       "results": [
         {
           "doc": "simple_text",
-          "time_ms": 11,
+          "time_ms": 5,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 5,
@@ -61,7 +61,7 @@
         },
         {
           "doc": "multi_page",
-          "time_ms": 4,
+          "time_ms": 1,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 4,
@@ -70,7 +70,7 @@
         },
         {
           "doc": "dense_financial",
-          "time_ms": 5,
+          "time_ms": 2,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 10,
@@ -79,7 +79,7 @@
         },
         {
           "doc": "mixed_formatting",
-          "time_ms": 4,
+          "time_ms": 2,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 6,
@@ -88,7 +88,7 @@
         },
         {
           "doc": "arabic_report",
-          "time_ms": 6,
+          "time_ms": 2,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 4,
@@ -97,7 +97,7 @@
         },
         {
           "doc": "chinese_report",
-          "time_ms": 4,
+          "time_ms": 3,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 4,
@@ -106,7 +106,7 @@
         },
         {
           "doc": "hebrew_report",
-          "time_ms": 11,
+          "time_ms": 8,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 4,
@@ -115,76 +115,76 @@
         }
       ]
     },
-    "opendataloader": {
-      "avg_time_ms": 796.6,
-      "avg_cer": 0.257,
-      "avg_wer": 0.3756,
-      "avg_bbox_count": 3.1,
+    "markitdown": {
+      "avg_time_ms": 50.7,
+      "avg_cer": 0.0478,
+      "avg_wer": 0.2415,
+      "avg_bbox_count": 0.0,
       "errors": 0,
       "successes": 7,
       "results": [
         {
           "doc": "simple_text",
-          "time_ms": 1083,
-          "cer": 0.0165,
-          "wer": 0.0556,
-          "bbox_count": 2,
-          "content_length": 123,
-          "pages": 1
+          "time_ms": 47,
+          "cer": 0.0,
+          "wer": 0.0,
+          "bbox_count": 0,
+          "content_length": 121,
+          "pages": null
         },
         {
           "doc": "multi_page",
-          "time_ms": 756,
-          "cer": 0.0133,
-          "wer": 0.0513,
-          "bbox_count": 2,
-          "content_length": 304,
-          "pages": 2
+          "time_ms": 16,
+          "cer": 0.0,
+          "wer": 0.0,
+          "bbox_count": 0,
+          "content_length": 300,
+          "pages": null
         },
         {
           "doc": "dense_financial",
-          "time_ms": 725,
+          "time_ms": 19,
           "cer": 0.0,
           "wer": 0.0,
-          "bbox_count": 1,
+          "bbox_count": 0,
           "content_length": 298,
-          "pages": 1
+          "pages": null
         },
         {
           "doc": "mixed_formatting",
-          "time_ms": 737,
-          "cer": 0.0308,
-          "wer": 0.0811,
-          "bbox_count": 5,
-          "content_length": 268,
-          "pages": 1
+          "time_ms": 29,
+          "cer": 0.0,
+          "wer": 0.0,
+          "bbox_count": 0,
+          "content_length": 260,
+          "pages": null
         },
         {
           "doc": "arabic_report",
-          "time_ms": 766,
-          "cer": 0.8675,
-          "wer": 1.08,
-          "bbox_count": 4,
-          "content_length": 151,
-          "pages": 1
+          "time_ms": 59,
+          "cer": 0.2517,
+          "wer": 0.32,
+          "bbox_count": 0,
+          "content_length": 179,
+          "pages": null
         },
         {
           "doc": "chinese_report",
-          "time_ms": 721,
-          "cer": 0.0317,
-          "wer": 0.25,
-          "bbox_count": 4,
-          "content_length": 65,
-          "pages": 1
+          "time_ms": 25,
+          "cer": 0.0476,
+          "wer": 1.0,
+          "bbox_count": 0,
+          "content_length": 60,
+          "pages": null
         },
         {
           "doc": "hebrew_report",
-          "time_ms": 788,
-          "cer": 0.8392,
-          "wer": 1.1111,
-          "bbox_count": 4,
-          "content_length": 149,
-          "pages": 1
+          "time_ms": 160,
+          "cer": 0.035,
+          "wer": 0.3704,
+          "bbox_count": 0,
+          "content_length": 138,
+          "pages": null
         }
       ]
     }

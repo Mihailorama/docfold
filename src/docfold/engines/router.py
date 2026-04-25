@@ -42,10 +42,19 @@ _EXTENSION_PRIORITY: dict[str, list[str]] = {
         "liteparse", "firecrawl", "azure_docint", "markitdown",
     ],
     "doc":  ["docling", "marker", "unstructured", "llamaparse", "liteparse", "azure_docint"],
-    "pptx": ["docling", "marker", "unstructured", "llamaparse", "liteparse", "azure_docint", "markitdown"],
+    "pptx": [
+        "docling", "marker", "unstructured", "llamaparse",
+        "liteparse", "azure_docint", "markitdown",
+    ],
     "ppt":  ["docling", "marker", "unstructured", "llamaparse", "liteparse", "azure_docint"],
-    "xlsx": ["docling", "marker", "unstructured", "llamaparse", "liteparse", "azure_docint", "markitdown"],
-    "xls":  ["docling", "marker", "unstructured", "llamaparse", "liteparse", "azure_docint", "markitdown"],
+    "xlsx": [
+        "docling", "marker", "unstructured", "llamaparse",
+        "liteparse", "azure_docint", "markitdown",
+    ],
+    "xls":  [
+        "docling", "marker", "unstructured", "llamaparse",
+        "liteparse", "azure_docint", "markitdown",
+    ],
     "odt":  ["marker", "unstructured"],
     "odp":  ["marker", "unstructured"],
     "ods":  ["marker", "unstructured"],

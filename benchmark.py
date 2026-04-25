@@ -286,7 +286,131 @@ def generate_benchmark_documents(tmpdir: str) -> list[dict]:
     # round-trip extraction for those scripts (null bytes, dropped matras).
     # They need real-world fixture PDFs — see docs/tasks/ for a follow-up.
 
+    # --- Doc 8: DOCX (Office) ---
+    # Minimal valid Office Open XML built with stdlib only — no python-docx
+    # dependency. Exercises engines that handle Office formats (markitdown,
+    # docling, unstructured, liteparse, ...).
+    doc8_path = os.path.join(tmpdir, "office_memo.docx")
+    doc8_paragraphs = [
+        "Internal Memo",
+        "To: All Staff",
+        "Date: April 25, 2026",
+        "Subject: Q1 2026 Results",
+        "Revenue grew 18 percent year-over-year, exceeding the plan.",
+        "Operating margin improved to 24.1 percent.",
+    ]
+    create_docx(doc8_path, doc8_paragraphs)
+    documents.append({
+        "name": "office_memo",
+        "path": doc8_path,
+        "ground_truth": "\n".join(doc8_paragraphs),
+        "pages": 1,
+        "category": "office",
+    })
+
+    # --- Doc 9: HTML page ---
+    doc9_path = os.path.join(tmpdir, "blog_post.html")
+    doc9_paragraphs = [
+        "How Document Processing Works",
+        "Document processing converts unstructured files into structured data.",
+        "Modern pipelines combine layout analysis, OCR, and language models.",
+        "Open-source toolkits make these capabilities widely accessible.",
+    ]
+    doc9_html = (
+        "<!DOCTYPE html><html><head><title>Doc Processing</title></head><body>"
+        f"<h1>{doc9_paragraphs[0]}</h1>"
+        + "".join(f"<p>{p}</p>" for p in doc9_paragraphs[1:])
+        + "</body></html>"
+    )
+    with open(doc9_path, "w", encoding="utf-8") as f:
+        f.write(doc9_html)
+    documents.append({
+        "name": "blog_post",
+        "path": doc9_path,
+        "ground_truth": "\n".join(doc9_paragraphs),
+        "pages": 1,
+        "category": "web",
+    })
+
+    # --- Doc 10: CSV (tabular) ---
+    # Engines that target Markdown output (markitdown, docling, ...) render
+    # CSV as a Markdown table.  The ground truth is the canonical Markdown
+    # table so CER/WER measure formatting fidelity, not how cells are joined.
+    doc10_path = os.path.join(tmpdir, "sales.csv")
+    doc10_rows = [
+        ["Region", "Q1", "Q2", "Q3", "Q4"],
+        ["North", "120", "135", "150", "180"],
+        ["South", "98", "110", "125", "140"],
+        ["East", "85", "92", "100", "118"],
+        ["West", "140", "155", "170", "200"],
+    ]
+    with open(doc10_path, "w", encoding="utf-8") as f:
+        for row in doc10_rows:
+            f.write(",".join(row) + "\n")
+    header = doc10_rows[0]
+    sep = ["---"] * len(header)
+    md_lines = (
+        ["| " + " | ".join(header) + " |", "| " + " | ".join(sep) + " |"]
+        + ["| " + " | ".join(row) + " |" for row in doc10_rows[1:]]
+    )
+    documents.append({
+        "name": "sales_csv",
+        "path": doc10_path,
+        "ground_truth": "\n".join(md_lines),
+        "pages": 1,
+        "category": "tabular",
+    })
+
     return documents
+
+
+def create_docx(path: str, paragraphs: list[str]) -> None:
+    """Build a minimal but valid .docx (Office Open XML) with no dependencies.
+
+    Only enough structure to round-trip plain paragraphs through engines like
+    python-docx, docling, markitdown, unstructured, liteparse, ...
+    """
+    import zipfile
+
+    def _xml_escape(s: str) -> str:
+        return (
+            s.replace("&", "&amp;")
+             .replace("<", "&lt;")
+             .replace(">", "&gt;")
+        )
+
+    body = "".join(
+        f'<w:p><w:r><w:t xml:space="preserve">{_xml_escape(p)}</w:t></w:r></w:p>'
+        for p in paragraphs
+    )
+    document_xml = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+        f'<w:body>{body}</w:body>'
+        '</w:document>'
+    )
+    content_types = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+        '<Default Extension="xml" ContentType="application/xml"/>'
+        '<Override PartName="/word/document.xml" '
+        'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
+        '</Types>'
+    )
+    rels = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        '<Relationship Id="rId1" '
+        'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" '
+        'Target="word/document.xml"/>'
+        '</Relationships>'
+    )
+
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("[Content_Types].xml", content_types)
+        zf.writestr("_rels/.rels", rels)
+        zf.writestr("word/document.xml", document_xml)
 
 
 def compute_cer(predicted: str, reference: str) -> float:
@@ -351,6 +475,7 @@ async def main():
     from docfold.engines.easyocr_engine import EasyOCREngine
     from docfold.engines.liteparse_engine import LiteParseEngine
     from docfold.engines.marker_local_engine import MarkerLocalEngine
+    from docfold.engines.markitdown_engine import MarkItDownEngine
     from docfold.engines.mineru_engine import MinerUEngine
     from docfold.engines.nougat_engine import NougatEngine
     from docfold.engines.opendataloader_engine import OpenDataLoaderEngine
@@ -377,6 +502,7 @@ async def main():
         (PaddleOCREngine(), "pip install paddleocr"),
         (TesseractEngine(), "pip install pytesseract"),
         (UnstructuredEngine(), "pip install unstructured"),
+        (MarkItDownEngine(), "pip install docfold[markitdown]"),
     ]
 
     # Skip engines that hang on CPU for multi-doc benchmarks
@@ -414,8 +540,15 @@ async def main():
             print(f"{'─' * 90}")
 
             gt = doc["ground_truth"]
+            doc_ext = os.path.splitext(doc["path"])[1].lstrip(".").lower()
 
             for engine in engines:
+                # Skip engines whose declared supported_extensions don't include
+                # this doc's format — keeps the report free of noise like
+                # "PyMuPDF can't open .docx".
+                if doc_ext and doc_ext not in engine.supported_extensions:
+                    continue
+
                 result, error = await run_engine(
                     engine, doc["path"], OutputFormat.MARKDOWN
                 )

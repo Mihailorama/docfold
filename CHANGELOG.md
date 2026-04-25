@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **MarkItDown engine adapter** — wraps Microsoft's [`markitdown`](https://github.com/microsoft/markitdown) pure-Python library that converts Office files, PDFs, HTML, images, CSV/JSON/XML, ePub, audio, and ZIP archives into LLM-friendly Markdown. Added to the `benchmark.py` harness alongside the other local engines. Install: `pip install docfold[markitdown]`.
+- **Non-PDF benchmark fixtures** — `benchmark.py` now also generates synthetic DOCX (built with stdlib `zipfile` + minimal Office Open XML, no extra deps), HTML, and CSV documents, and filters engines per-doc by `supported_extensions` so PyMuPDF / OCR engines no longer log spurious errors on Office or web fixtures.
 - **OpenDataLoader PDF engine adapter** — wraps the Java-based [`opendataloader-pdf`](https://github.com/opendataloader-project/opendataloader-pdf) tool (via its bundled-JAR Python wheel). Local, deterministic extraction with typed structural elements (heading, paragraph, table, list, header, footer) and per-element bounding boxes. Install: `pip install docfold[opendataloader]` (also requires Java 11+).
 - **Multi-script benchmark coverage** — `benchmark.py` now generates Arabic (RTL + shaping), Hebrew (RTL, no shaping), and Simplified Chinese (CJK) synthetic PDFs alongside the existing English docs. Fonts are bundled under `tests/fixtures/fonts/` (OFL-1.1, subsetted where relevant) so the benchmark is reproducible without system font packages.
 

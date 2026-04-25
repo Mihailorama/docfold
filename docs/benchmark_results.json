@@ -1,5 +1,5 @@
 {
-  "benchmark_date": "2026-04-24 17:57:13",
+  "benchmark_date": "2026-04-25 18:26:40",
   "engines": [
     "pymupdf",
     "markitdown"
@@ -39,11 +39,26 @@
       "name": "hebrew_report",
       "pages": 1,
       "category": "rtl"
+    },
+    {
+      "name": "office_memo",
+      "pages": 1,
+      "category": "office"
+    },
+    {
+      "name": "blog_post",
+      "pages": 1,
+      "category": "web"
+    },
+    {
+      "name": "sales_csv",
+      "pages": 1,
+      "category": "tabular"
     }
   ],
   "summary": {
     "pymupdf": {
-      "avg_time_ms": 3.3,
+      "avg_time_ms": 4.4,
       "avg_cer": 0.0,
       "avg_wer": 0.0,
       "avg_bbox_count": 5.3,
@@ -61,7 +76,7 @@
         },
         {
           "doc": "multi_page",
-          "time_ms": 1,
+          "time_ms": 3,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 4,
@@ -70,7 +85,7 @@
         },
         {
           "doc": "dense_financial",
-          "time_ms": 2,
+          "time_ms": 3,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 10,
@@ -88,7 +103,7 @@
         },
         {
           "doc": "arabic_report",
-          "time_ms": 2,
+          "time_ms": 3,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 4,
@@ -106,7 +121,7 @@
         },
         {
           "doc": "hebrew_report",
-          "time_ms": 8,
+          "time_ms": 12,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 4,
@@ -116,16 +131,16 @@
       ]
     },
     "markitdown": {
-      "avg_time_ms": 50.7,
-      "avg_cer": 0.0478,
-      "avg_wer": 0.2415,
+      "avg_time_ms": 47.0,
+      "avg_cer": 0.0343,
+      "avg_wer": 0.1726,
       "avg_bbox_count": 0.0,
       "errors": 0,
-      "successes": 7,
+      "successes": 10,
       "results": [
         {
           "doc": "simple_text",
-          "time_ms": 47,
+          "time_ms": 144,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 0,
@@ -134,7 +149,7 @@
         },
         {
           "doc": "multi_page",
-          "time_ms": 16,
+          "time_ms": 27,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 0,
@@ -143,7 +158,7 @@
         },
         {
           "doc": "dense_financial",
-          "time_ms": 19,
+          "time_ms": 21,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 0,
@@ -152,7 +167,7 @@
         },
         {
           "doc": "mixed_formatting",
-          "time_ms": 29,
+          "time_ms": 23,
           "cer": 0.0,
           "wer": 0.0,
           "bbox_count": 0,
@@ -161,7 +176,7 @@
         },
         {
           "doc": "arabic_report",
-          "time_ms": 59,
+          "time_ms": 69,
           "cer": 0.2517,
           "wer": 0.32,
           "bbox_count": 0,
@@ -170,7 +185,7 @@
         },
         {
           "doc": "chinese_report",
-          "time_ms": 25,
+          "time_ms": 20,
           "cer": 0.0476,
           "wer": 1.0,
           "bbox_count": 0,
@@ -179,11 +194,38 @@
         },
         {
           "doc": "hebrew_report",
-          "time_ms": 160,
+          "time_ms": 148,
           "cer": 0.035,
           "wer": 0.3704,
           "bbox_count": 0,
           "content_length": 138,
+          "pages": null
+        },
+        {
+          "doc": "office_memo",
+          "time_ms": 10,
+          "cer": 0.0,
+          "wer": 0.0,
+          "bbox_count": 0,
+          "content_length": 176,
+          "pages": null
+        },
+        {
+          "doc": "blog_post",
+          "time_ms": 5,
+          "cer": 0.0087,
+          "wer": 0.0357,
+          "bbox_count": 0,
+          "content_length": 233,
+          "pages": null
+        },
+        {
+          "doc": "sales_csv",
+          "time_ms": 3,
+          "cer": 0.0,
+          "wer": 0.0,
+          "bbox_count": 0,
+          "content_length": 193,
           "pages": null
         }
       ]

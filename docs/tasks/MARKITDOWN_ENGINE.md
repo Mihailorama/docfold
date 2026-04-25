@@ -109,3 +109,19 @@ python benchmark.py
 - No attempt to extract bounding boxes — markitdown doesn't produce them.
 - No audio / YouTube / ZIP extensions enrollment in the router priority map;
   we only register formats that already exist in `_EXTENSION_PRIORITY`.
+
+## Follow-up: non-PDF benchmark coverage
+
+The first round of `benchmark.py` only generated PDFs, which is the format
+where markitdown is *least* differentiated (PyMuPDF dominates on digital text
+PDFs). To actually exercise where markitdown shines, the harness now also
+produces:
+
+- A synthetic **DOCX** (built via stdlib `zipfile` + minimal Word XML — no
+  new runtime deps).
+- A synthetic **HTML** page with a heading, paragraphs, and a small table.
+- A synthetic **CSV** with a few rows.
+
+Engines are filtered per-doc by `supported_extensions`, so PyMuPDF / OCR
+engines simply don't run on Office / web / tabular fixtures (instead of
+spamming the report with errors).

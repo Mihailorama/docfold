@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **MinerU engine upgraded to MinerU 2.x** — the adapter now targets the current
+  [`mineru`](https://github.com/opendatalab/MinerU) package (formerly `magic-pdf`)
+  via its supported `mineru.cli.common.do_parse` API. The dependency extra changed
+  from `magic-pdf[full]>=0.9` to `mineru[core]>=2.0`. `MinerUEngine` gains
+  `backend` (`pipeline` default, or `vlm`) and `parse_method` constructor options;
+  the public engine name (`mineru`), `process()` signature, and `EngineResult`
+  shape are unchanged. **Breaking for installs:** reinstall with
+  `pip install -U docfold[mineru]` to pull `mineru` 2.x.
+
 ### Added
 
 - **Unlimited-OCR engine adapter** — wraps Baidu's open-weight [`Unlimited-OCR`](https://github.com/baidu/Unlimited-OCR) document-parsing VLM (loaded from HuggingFace via `trust_remote_code`). Builds on DeepSeek-OCR with Reference Sliding Window Attention (R-SWA) for one-shot long-horizon parsing. Supports `gundam` and `base` modes, images, and PDFs (rendered to images via PyMuPDF), emitting Markdown/HTML/JSON. Registered in the router for PDF and image inputs. Install: `pip install docfold[unlimited-ocr]` (requires a CUDA GPU).

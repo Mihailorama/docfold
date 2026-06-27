@@ -40,7 +40,7 @@ docling = [
     "docling>=2.0",
 ]
 mineru = [
-    "magic-pdf[full]>=0.9",
+    "mineru[core]>=2.0",
 ]
 marker = [
     "requests>=2.31",

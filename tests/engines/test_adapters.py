@@ -55,7 +55,7 @@ class TestMinerUEngine:
     def test_is_available_when_missing(self):
         from docfold.engines.mineru_engine import MinerUEngine
         e = MinerUEngine()
-        with patch.dict("sys.modules", {"magic_pdf": None}):
+        with patch.dict("sys.modules", {"mineru": None}):
             result = e.is_available()
             assert isinstance(result, bool)
 
@@ -64,6 +64,17 @@ class TestMinerUEngine:
         e = MinerUEngine(config_path="/tmp/cfg.yaml", gpu=True)
         assert e._config_path == "/tmp/cfg.yaml"
         assert e._gpu is True
+
+    def test_default_backend_is_pipeline(self):
+        from docfold.engines.mineru_engine import MinerUEngine
+        e = MinerUEngine()
+        assert e._backend == "pipeline"
+
+    def test_backend_config_stored(self):
+        from docfold.engines.mineru_engine import MinerUEngine
+        e = MinerUEngine(backend="vlm", parse_method="ocr")
+        assert e._backend == "vlm"
+        assert e._parse_method == "ocr"
 
     def test_capabilities(self):
         from docfold.engines.mineru_engine import MinerUEngine
@@ -76,180 +87,133 @@ class TestMinerUEngine:
         assert caps.confidence is False
 
     def test_is_available_when_installed(self):
-        """When magic_pdf is importable, is_available returns True."""
+        """When mineru is importable, is_available returns True."""
         from unittest.mock import MagicMock, patch
 
         from docfold.engines.mineru_engine import MinerUEngine
         e = MinerUEngine()
-        with patch.dict("sys.modules", {"magic_pdf": MagicMock()}):
+        with patch.dict("sys.modules", {"mineru": MagicMock()}):
             result = e.is_available()
         assert result is True
 
     @pytest.mark.asyncio
-    async def test_process_returns_engine_result(self):
-        """MinerU engine processes a PDF and returns a valid EngineResult."""
+    async def test_process_returns_engine_result(self, tmp_path):
+        """MinerU 2.x engine processes a PDF via do_parse and returns a result."""
         import os
-        import tempfile
-        from unittest.mock import MagicMock, patch
+        from unittest.mock import patch
 
         from docfold.engines.base import EngineResult, OutputFormat
         from docfold.engines.mineru_engine import MinerUEngine
 
-        mock_pipe_result = MagicMock()
-        mock_pipe_result.get_markdown.return_value = "# Hello\n\nExtracted content"
-
-        mock_infer_result = MagicMock()
-        mock_infer_result.pipe_txt_mode.return_value = mock_pipe_result
-
-        mock_dataset = MagicMock()
-        mock_dataset.classify.return_value = "txt"
-        mock_dataset.apply.return_value = mock_infer_result
-        mock_dataset._lang = None
-
-        mock_spm = MagicMock()
-        mock_spm.TXT = "txt"
+        def fake_do_parse(output_dir, pdf_file_names, *args, **kwargs):
+            # Mimic MinerU 2.x pipeline layout: output_dir/<name>/<parse_method>/<name>.md
+            name = pdf_file_names[0]
+            parse_method = kwargs.get("parse_method", "auto")
+            md_dir = os.path.join(output_dir, name, parse_method)
+            os.makedirs(md_dir, exist_ok=True)
+            with open(os.path.join(md_dir, f"{name}.md"), "w") as fh:
+                fh.write("# Hello\n\nExtracted content")
 
         with patch("docfold.engines.mineru_engine._ensure_imports"), \
-             patch("docfold.engines.mineru_engine.PymuDocDataset", return_value=mock_dataset), \
-             patch("docfold.engines.mineru_engine.SupportedPdfParseMethod", mock_spm), \
-             patch("docfold.engines.mineru_engine.FileBasedDataWriter"), \
-             patch("docfold.engines.mineru_engine.doc_analyze"):
+             patch("docfold.engines.mineru_engine.read_fn", return_value=b"%PDF-1.4"), \
+             patch("docfold.engines.mineru_engine.do_parse", side_effect=fake_do_parse):
             e = MinerUEngine()
-            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
-                f.write(b"%PDF-1.4 minimal")
-            try:
-                result = await e.process(f.name, OutputFormat.MARKDOWN)
-                assert isinstance(result, EngineResult)
-                assert result.engine_name == "mineru"
-                assert result.content == "# Hello\n\nExtracted content"
-                assert result.format == OutputFormat.MARKDOWN
-                assert result.processing_time_ms >= 0
-            finally:
-                os.unlink(f.name)
+            pdf = tmp_path / "doc.pdf"
+            pdf.write_bytes(b"%PDF-1.4 minimal")
+            result = await e.process(str(pdf), OutputFormat.MARKDOWN)
+            assert isinstance(result, EngineResult)
+            assert result.engine_name == "mineru"
+            assert result.content == "# Hello\n\nExtracted content"
+            assert result.format == OutputFormat.MARKDOWN
+            assert result.processing_time_ms >= 0
 
     @pytest.mark.asyncio
-    async def test_process_ocr_mode_for_scanned_pdf(self):
-        """MinerU uses OCR mode when PDF is classified as scanned."""
-        import os
-        import tempfile
-        from unittest.mock import MagicMock, patch
-
-        from docfold.engines.base import OutputFormat
-        from docfold.engines.mineru_engine import MinerUEngine
-
-        mock_pipe_result = MagicMock()
-        mock_pipe_result.get_markdown.return_value = "OCR content"
-
-        mock_infer_result = MagicMock()
-        mock_infer_result.pipe_ocr_mode.return_value = mock_pipe_result
-
-        mock_dataset = MagicMock()
-        mock_dataset.classify.return_value = "ocr"
-        mock_dataset.apply.return_value = mock_infer_result
-        mock_dataset._lang = None
-
-        mock_spm = MagicMock()
-        mock_spm.TXT = "txt"
-
-        with patch("docfold.engines.mineru_engine._ensure_imports"), \
-             patch("docfold.engines.mineru_engine.PymuDocDataset", return_value=mock_dataset), \
-             patch("docfold.engines.mineru_engine.SupportedPdfParseMethod", mock_spm), \
-             patch("docfold.engines.mineru_engine.FileBasedDataWriter"), \
-             patch("docfold.engines.mineru_engine.doc_analyze"):
-            e = MinerUEngine()
-            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
-                f.write(b"%PDF-1.4 minimal")
-            try:
-                result = await e.process(f.name, OutputFormat.MARKDOWN)
-                assert result.content == "OCR content"
-                mock_infer_result.pipe_ocr_mode.assert_called_once()
-            finally:
-                os.unlink(f.name)
-
-    @pytest.mark.asyncio
-    async def test_process_json_output_format(self):
+    async def test_process_json_output_format(self, tmp_path):
         """MinerU returns content_list JSON when output_format is JSON."""
         import os
-        import tempfile
-        from unittest.mock import MagicMock, patch
+        from unittest.mock import patch
 
         from docfold.engines.base import OutputFormat
         from docfold.engines.mineru_engine import MinerUEngine
 
-        mock_pipe_result = MagicMock()
-        mock_pipe_result.get_markdown.return_value = "md content"
-        mock_pipe_result.get_content_list.return_value = '[{"type": "text", "text": "hello"}]'
-
-        mock_infer_result = MagicMock()
-        mock_infer_result.pipe_txt_mode.return_value = mock_pipe_result
-
-        mock_dataset = MagicMock()
-        mock_dataset.classify.return_value = "txt"
-        mock_dataset.apply.return_value = mock_infer_result
-        mock_dataset._lang = None
-
-        mock_spm = MagicMock()
-        mock_spm.TXT = "txt"
+        def fake_do_parse(output_dir, pdf_file_names, *args, **kwargs):
+            name = pdf_file_names[0]
+            parse_method = kwargs.get("parse_method", "auto")
+            md_dir = os.path.join(output_dir, name, parse_method)
+            os.makedirs(md_dir, exist_ok=True)
+            with open(os.path.join(md_dir, f"{name}_content_list.json"), "w") as fh:
+                fh.write('[{"type": "text", "text": "hello"}]')
 
         with patch("docfold.engines.mineru_engine._ensure_imports"), \
-             patch("docfold.engines.mineru_engine.PymuDocDataset", return_value=mock_dataset), \
-             patch("docfold.engines.mineru_engine.SupportedPdfParseMethod", mock_spm), \
-             patch("docfold.engines.mineru_engine.FileBasedDataWriter"), \
-             patch("docfold.engines.mineru_engine.doc_analyze"):
+             patch("docfold.engines.mineru_engine.read_fn", return_value=b"%PDF-1.4"), \
+             patch("docfold.engines.mineru_engine.do_parse", side_effect=fake_do_parse):
             e = MinerUEngine()
-            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
-                f.write(b"%PDF-1.4 minimal")
-            try:
-                result = await e.process(f.name, OutputFormat.JSON)
-                assert result.format == OutputFormat.JSON
-                assert "text" in result.content
-            finally:
-                os.unlink(f.name)
+            pdf = tmp_path / "doc.pdf"
+            pdf.write_bytes(b"%PDF-1.4 minimal")
+            result = await e.process(str(pdf), OutputFormat.JSON)
+            assert result.format == OutputFormat.JSON
+            assert "text" in result.content
 
     @pytest.mark.asyncio
-    async def test_process_with_page_range(self):
-        """MinerU respects start_page and end_page kwargs."""
+    async def test_process_forwards_page_range_and_lang(self, tmp_path):
+        """MinerU forwards start_page/end_page as start_page_id/end_page_id and lang."""
         import os
-        import tempfile
         from unittest.mock import MagicMock, patch
 
         from docfold.engines.base import OutputFormat
         from docfold.engines.mineru_engine import MinerUEngine
 
-        mock_pipe_result = MagicMock()
-        mock_pipe_result.get_markdown.return_value = "page content"
+        def fake_do_parse(output_dir, pdf_file_names, *args, **kwargs):
+            name = pdf_file_names[0]
+            parse_method = kwargs.get("parse_method", "auto")
+            md_dir = os.path.join(output_dir, name, parse_method)
+            os.makedirs(md_dir, exist_ok=True)
+            with open(os.path.join(md_dir, f"{name}.md"), "w") as fh:
+                fh.write("page content")
 
-        mock_infer_result = MagicMock()
-        mock_infer_result.pipe_txt_mode.return_value = mock_pipe_result
-
-        mock_dataset = MagicMock()
-        mock_dataset.classify.return_value = "txt"
-        mock_dataset.apply.return_value = mock_infer_result
-        mock_dataset._lang = None
-
-        mock_spm = MagicMock()
-        mock_spm.TXT = "txt"
-
+        mock_do_parse = MagicMock(side_effect=fake_do_parse)
         with patch("docfold.engines.mineru_engine._ensure_imports"), \
-             patch("docfold.engines.mineru_engine.PymuDocDataset", return_value=mock_dataset), \
-             patch("docfold.engines.mineru_engine.SupportedPdfParseMethod", mock_spm), \
-             patch("docfold.engines.mineru_engine.FileBasedDataWriter"), \
-             patch("docfold.engines.mineru_engine.doc_analyze"), \
-             patch(
-                "docfold.engines.mineru_engine.convert_pdf_bytes_to_bytes_by_pymupdf",
-             ) as mock_convert:
-            mock_convert.return_value = b"%PDF-1.4 subset"
+             patch("docfold.engines.mineru_engine.read_fn", return_value=b"%PDF-1.4"), \
+             patch("docfold.engines.mineru_engine.do_parse", mock_do_parse):
             e = MinerUEngine()
-            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
-                f.write(b"%PDF-1.4 minimal")
-            try:
-                await e.process(
-                    f.name, OutputFormat.MARKDOWN,
-                    start_page=2, end_page=5,
-                )
-                mock_convert.assert_called_once()
-            finally:
-                os.unlink(f.name)
+            pdf = tmp_path / "doc.pdf"
+            pdf.write_bytes(b"%PDF-1.4 minimal")
+            await e.process(
+                str(pdf), OutputFormat.MARKDOWN,
+                start_page=2, end_page=5, lang="ru",
+            )
+            kwargs = mock_do_parse.call_args.kwargs
+            assert kwargs["start_page_id"] == 2
+            assert kwargs["end_page_id"] == 5
+            assert kwargs["p_lang_list"] == ["ru"]
+            assert kwargs["backend"] == "pipeline"
+
+    @pytest.mark.asyncio
+    async def test_process_vlm_backend_reads_vlm_subdir(self, tmp_path):
+        """With backend='vlm', output is read from the 'vlm' subdirectory."""
+        import os
+        from unittest.mock import MagicMock, patch
+
+        from docfold.engines.base import OutputFormat
+        from docfold.engines.mineru_engine import MinerUEngine
+
+        def fake_do_parse(output_dir, pdf_file_names, *args, **kwargs):
+            name = pdf_file_names[0]
+            md_dir = os.path.join(output_dir, name, "vlm")
+            os.makedirs(md_dir, exist_ok=True)
+            with open(os.path.join(md_dir, f"{name}.md"), "w") as fh:
+                fh.write("vlm content")
+
+        mock_do_parse = MagicMock(side_effect=fake_do_parse)
+        with patch("docfold.engines.mineru_engine._ensure_imports"), \
+             patch("docfold.engines.mineru_engine.read_fn", return_value=b"%PDF-1.4"), \
+             patch("docfold.engines.mineru_engine.do_parse", mock_do_parse):
+            e = MinerUEngine(backend="vlm")
+            pdf = tmp_path / "doc.pdf"
+            pdf.write_bytes(b"%PDF-1.4 minimal")
+            result = await e.process(str(pdf), OutputFormat.MARKDOWN)
+            assert result.content == "vlm content"
+            assert mock_do_parse.call_args.kwargs["backend"] == "vlm"
 
 
 class TestMarkerEngine:

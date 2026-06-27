@@ -324,7 +324,7 @@ Docfold builds on and integrates with these excellent projects:
 | Project | Description |
 |---------|-------------|
 | [Docling](https://github.com/docling-project/docling) | IBM's document conversion toolkit — PDF, DOCX, PPTX, and more |
-| [MinerU / PDF-Extract-Kit](https://github.com/opendatalab/MinerU) | End-to-end PDF structuring with layout analysis and formula recognition |
+| [MinerU](https://github.com/opendatalab/MinerU) (2.x) | End-to-end PDF structuring with layout analysis and formula recognition (pipeline + VLM backends) |
 | [Marker](https://github.com/VikParuchuri/marker) | High-quality PDF to Markdown converter |
 | [PyMuPDF](https://github.com/pymupdf/PyMuPDF) | Fast PDF/XPS/EPUB processing library |
 | [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) | Multilingual OCR toolkit (80+ languages) |

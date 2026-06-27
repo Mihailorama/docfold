@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **MinerU engine upgraded to MinerU 2.x** — the adapter now targets the current
+  [`mineru`](https://github.com/opendatalab/MinerU) package (formerly `magic-pdf`)
+  via its supported `mineru.cli.common.do_parse` API. The dependency extra changed
+  from `magic-pdf[full]>=0.9` to `mineru[core]>=2.0`. `MinerUEngine` gains
+  `backend` (`pipeline` default, or `vlm`) and `parse_method` constructor options;
+  the public engine name (`mineru`), `process()` signature, and `EngineResult`
+  shape are unchanged. **Breaking for installs:** reinstall with
+  `pip install -U docfold[mineru]` to pull `mineru` 2.x.
+
 ### Added
 
 - **MarkItDown engine adapter** — wraps Microsoft's [`markitdown`](https://github.com/microsoft/markitdown) pure-Python library that converts Office files, PDFs, HTML, images, CSV/JSON/XML, ePub, audio, and ZIP archives into LLM-friendly Markdown. Added to the `benchmark.py` harness alongside the other local engines. Install: `pip install docfold[markitdown]`.

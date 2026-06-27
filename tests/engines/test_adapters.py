@@ -1282,6 +1282,133 @@ class TestChandraEngine:
         assert caps.confidence is False
 
 
+class TestUnlimitedOCREngine:
+    def test_name(self):
+        from docfold.engines.unlimited_ocr_engine import UnlimitedOCREngine
+        e = UnlimitedOCREngine()
+        assert e.name == "unlimited_ocr"
+
+    def test_supported_extensions(self):
+        from docfold.engines.unlimited_ocr_engine import UnlimitedOCREngine
+        e = UnlimitedOCREngine()
+        exts = e.supported_extensions
+        assert "pdf" in exts
+        assert "png" in exts
+        assert "jpg" in exts
+        assert "jpeg" in exts
+        assert "tiff" in exts
+        assert "bmp" in exts
+        assert "webp" in exts
+
+    def test_is_available_when_missing(self):
+        from docfold.engines.unlimited_ocr_engine import UnlimitedOCREngine
+        e = UnlimitedOCREngine()
+        with patch.dict("sys.modules", {"torch": None}):
+            result = e.is_available()
+            assert isinstance(result, bool)
+
+    def test_config_stored(self):
+        from docfold.engines.unlimited_ocr_engine import UnlimitedOCREngine
+        e = UnlimitedOCREngine(
+            mode="base",
+            model="baidu/Unlimited-OCR",
+            max_length=16384,
+            prompt="<image>parse.",
+            device="cpu",
+        )
+        assert e._mode == "base"
+        assert e._model == "baidu/Unlimited-OCR"
+        assert e._max_length == 16384
+        assert e._prompt == "<image>parse."
+        assert e._device == "cpu"
+
+    def test_default_mode_is_gundam(self):
+        from docfold.engines.unlimited_ocr_engine import UnlimitedOCREngine
+        e = UnlimitedOCREngine()
+        assert e._mode == "gundam"
+
+    def test_mode_params(self):
+        from docfold.engines.unlimited_ocr_engine import UnlimitedOCREngine
+        gundam = UnlimitedOCREngine(mode="gundam")._mode_params()
+        assert gundam == (1024, 640, True)
+        base = UnlimitedOCREngine(mode="base")._mode_params()
+        assert base == (1024, 1024, False)
+
+    def test_capabilities(self):
+        from docfold.engines.unlimited_ocr_engine import UnlimitedOCREngine
+        caps = UnlimitedOCREngine().capabilities
+        assert caps.table_structure is True
+        assert caps.heading_detection is True
+        assert caps.reading_order is True
+        assert caps.bounding_boxes is False
+        assert caps.confidence is False
+
+    @pytest.mark.asyncio
+    async def test_process_returns_engine_result(self):
+        """Unlimited-OCR processes an image and returns a valid EngineResult."""
+        import os
+        import tempfile
+        from unittest.mock import MagicMock, patch
+
+        from docfold.engines.base import EngineResult, OutputFormat
+        from docfold.engines.unlimited_ocr_engine import UnlimitedOCREngine
+
+        mock_model = MagicMock()
+        mock_model.infer.return_value = "# Hello\n\nExtracted content"
+        mock_tokenizer = MagicMock()
+
+        prefix = "docfold.engines.unlimited_ocr_engine"
+        with patch(
+            f"{prefix}.UnlimitedOCREngine._ensure_model",
+            return_value=(mock_model, mock_tokenizer),
+        ):
+            e = UnlimitedOCREngine(device="cpu")
+            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
+                f.write(b"\x89PNG\r\n\x1a\n fake")
+            try:
+                result = await e.process(f.name, OutputFormat.MARKDOWN)
+                assert isinstance(result, EngineResult)
+                assert result.engine_name == "unlimited_ocr"
+                assert result.content == "# Hello\n\nExtracted content"
+                assert result.format == OutputFormat.MARKDOWN
+                assert result.pages == 1
+                assert result.processing_time_ms >= 0
+                mock_model.infer.assert_called_once()
+            finally:
+                os.unlink(f.name)
+
+    @pytest.mark.asyncio
+    async def test_process_json_output(self):
+        """Unlimited-OCR returns per-page JSON when output_format is JSON."""
+        import json
+        import os
+        import tempfile
+        from unittest.mock import MagicMock, patch
+
+        from docfold.engines.base import OutputFormat
+        from docfold.engines.unlimited_ocr_engine import UnlimitedOCREngine
+
+        mock_model = MagicMock()
+        mock_model.infer.return_value = "page text"
+        mock_tokenizer = MagicMock()
+
+        prefix = "docfold.engines.unlimited_ocr_engine"
+        with patch(
+            f"{prefix}.UnlimitedOCREngine._ensure_model",
+            return_value=(mock_model, mock_tokenizer),
+        ):
+            e = UnlimitedOCREngine(device="cpu")
+            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
+                f.write(b"\x89PNG\r\n\x1a\n fake")
+            try:
+                result = await e.process(f.name, OutputFormat.JSON)
+                assert result.format == OutputFormat.JSON
+                parsed = json.loads(result.content)
+                assert parsed["pages"][0]["text"] == "page text"
+            finally:
+                os.unlink(f.name)
+
+
 class TestAllEnginesImplementInterface:
     """Verify every adapter satisfies the DocumentEngine ABC."""
 
@@ -1306,6 +1433,7 @@ class TestAllEnginesImplementInterface:
         "docfold.engines.firecrawl_engine.FirecrawlEngine",
         "docfold.engines.chandra_engine.ChandraEngine",
         "docfold.engines.marker_local_engine.MarkerLocalEngine",
+        "docfold.engines.unlimited_ocr_engine.UnlimitedOCREngine",
     ])
     def test_has_required_attributes(self, engine_cls_path):
         module_path, cls_name = engine_cls_path.rsplit(".", 1)

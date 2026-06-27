@@ -191,6 +191,12 @@ def _build_router():
         pass
 
     try:
+        from docfold.engines.unlimited_ocr_engine import UnlimitedOCREngine
+        router.register(UnlimitedOCREngine())
+    except Exception:
+        pass
+
+    try:
         from docfold.engines.firecrawl_engine import FirecrawlEngine
         router.register(FirecrawlEngine())
     except Exception:

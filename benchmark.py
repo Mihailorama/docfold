@@ -483,6 +483,7 @@ async def main():
     from docfold.engines.pymupdf_engine import PyMuPDFEngine
     from docfold.engines.surya_engine import SuryaEngine
     from docfold.engines.tesseract_engine import TesseractEngine
+    from docfold.engines.unlimited_ocr_engine import UnlimitedOCREngine
     from docfold.engines.unstructured_engine import UnstructuredEngine
 
     # All local/open-source engines to benchmark
@@ -496,6 +497,7 @@ async def main():
         (MinerUEngine(), "pip install docfold[mineru]"),
         (MarkerLocalEngine(), "pip install marker-pdf"),
         (SuryaEngine(), "pip install surya-ocr"),
+        (UnlimitedOCREngine(), "pip install docfold[unlimited-ocr] (needs CUDA GPU)"),
         (DoclingEngine(), "pip install docling"),
         (EasyOCREngine(gpu=False), "pip install easyocr"),
         (NougatEngine(), "pip install nougat-ocr"),

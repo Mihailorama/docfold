@@ -105,6 +105,15 @@ surya = [
     "torch>=2.0",
     "Pillow>=10.0",
 ]
+unlimited-ocr = [
+    # Model is loaded from HuggingFace via trust_remote_code — no dedicated package.
+    "torch>=2.0",
+    "torchvision>=0.15",
+    "transformers>=4.57",
+    "Pillow>=10.0",
+    "einops>=0.8",
+    "PyMuPDF>=1.23",  # render PDF pages to images
+]
 firecrawl = [
     "firecrawl-py>=1.0",
 ]
@@ -119,7 +128,7 @@ evaluation = [
     "psutil>=5.9",         # Memory measurement
 ]
 all = [
-    "docfold[docling,mineru,marker,pymupdf,paddleocr,tesseract,easyocr,unstructured,llamaparse,liteparse,opendataloader,mistral-ocr,textract,google-docai,azure-docint,nougat,chandra,surya,firecrawl,markitdown,evaluation]",
+    "docfold[docling,mineru,marker,pymupdf,paddleocr,tesseract,easyocr,unstructured,llamaparse,liteparse,opendataloader,mistral-ocr,textract,google-docai,azure-docint,nougat,chandra,surya,unlimited-ocr,firecrawl,markitdown,evaluation]",
     # Note: zerox excluded from [all] — py-zerox requires Python 3.11+
     # Install separately: pip install docfold[zerox]
 ]

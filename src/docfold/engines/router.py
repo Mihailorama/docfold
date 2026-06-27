@@ -23,15 +23,15 @@ logger = logging.getLogger(__name__)
 # the first *available* engine that supports the extension.
 
 _IMAGE_PRIORITY = [
-    "chandra", "surya", "paddleocr", "tesseract", "easyocr", "docling", "liteparse",
-    "mistral_ocr", "google_docai", "textract", "azure_docint", "zerox", "marker",
-    "markitdown",
+    "chandra", "unlimited_ocr", "surya", "paddleocr", "tesseract", "easyocr",
+    "docling", "liteparse", "mistral_ocr", "google_docai", "textract",
+    "azure_docint", "zerox", "marker", "markitdown",
 ]
 
 _EXTENSION_PRIORITY: dict[str, list[str]] = {
     # --- PDF ---
     "pdf": [
-        "docling", "mineru", "chandra", "unstructured", "marker",
+        "docling", "mineru", "chandra", "unlimited_ocr", "unstructured", "marker",
         "llamaparse", "liteparse", "mistral_ocr", "firecrawl", "google_docai",
         "azure_docint", "textract", "zerox", "nougat", "surya", "pymupdf",
         "paddleocr", "tesseract", "easyocr", "markitdown",
@@ -93,7 +93,7 @@ _EXTENSION_PRIORITY: dict[str, list[str]] = {
 
 # Ultimate fallback when extension is unknown or missing from the map.
 _DEFAULT_FALLBACK = [
-    "docling", "mineru", "chandra", "unstructured", "marker",
+    "docling", "mineru", "chandra", "unlimited_ocr", "unstructured", "marker",
     "llamaparse", "liteparse", "mistral_ocr", "google_docai", "azure_docint",
     "textract", "zerox", "nougat", "surya", "pymupdf", "paddleocr", "tesseract",
     "easyocr", "markitdown",

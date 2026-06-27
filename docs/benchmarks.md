@@ -23,6 +23,7 @@ This guide helps you choose the right document processing engine for your use ca
 | **Zerox** | VLM | MIT | ★★★ | ★★★ | ★★☆ | ★★☆ | ★★★ | Slow | VLM API cost |
 | **Nougat** | Local | MIT | ★★★ | ★★☆ | ★★☆ | ★★★ | ★☆☆ | Slow | Free |
 | **Surya** | Local | GPL-3.0 | ★★☆ | ★★★ | ★★☆ | ★☆☆ | ★★★ (90+) | Medium | Free |
+| **Unlimited-OCR** | Local/VLM | MIT | ★★★ | ★★★ | ★★★ | ★★☆ | ★★☆ | Slow | Free |
 | AWS Textract | SaaS | Paid | ★★★ | ★★★ | ★★★ | ★☆☆ | ★★☆ | Fast | ~$1.50/1K pages |
 | Google Document AI | SaaS | Paid | ★★★ | ★★★ | ★★★ | ★★☆ | ★★★ | Fast | ~$1.50/1K pages |
 | Azure Document Intelligence | SaaS | Paid | ★★★ | ★★★ | ★★★ | ★★☆ | ★★★ | Fast | ~$1.50/1K pages |
@@ -237,6 +238,16 @@ This guide helps you choose the right document processing engine for your use ca
 - **GPU:** Optional, speeds up processing significantly.
 - **Install:** `pip install docfold[surya]`
 - **Links:** [GitHub](https://github.com/VikParuchuri/surya)
+
+### Unlimited-OCR (Baidu)
+
+**Best for:** Long, multi-page documents parsed in one shot — the headline "long-horizon" use case.
+
+- **Strengths:** Open-weight VLM (MIT) released June 2026. Builds on DeepSeek-OCR and replaces decoder attention with **Reference Sliding Window Attention (R-SWA)** for a *constant* KV cache, so it can transcribe dozens of pages in a single 32K-context forward pass. Strong Markdown output with headings, tables, and reading order. Two modes: `gundam` (dynamic crop, single images) and `base` (full resolution, multi-page).
+- **Weaknesses:** Requires a CUDA GPU and heavy deps (torch, transformers). Loaded via `trust_remote_code` from HuggingFace. Newer project — API may evolve. The docfold adapter processes page-by-page; native single-pass `infer_multi` long-horizon batching is a future enhancement.
+- **GPU:** Required (CUDA), bfloat16.
+- **Install:** `pip install docfold[unlimited-ocr]`
+- **Links:** [GitHub](https://github.com/baidu/Unlimited-OCR) | [HuggingFace](https://huggingface.co/baidu/Unlimited-OCR) | [Paper](https://arxiv.org/abs/2606.23050)
 
 ---
 

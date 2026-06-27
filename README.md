@@ -35,6 +35,7 @@ Docfold is the open-source extraction engine from [Datatera.ai](https://datatera
 | [**Azure Doc Intel**](https://azure.microsoft.com/en-us/products/ai-services/ai-document-intelligence) | ✅ | SaaS | Paid | ★★★ | ★★★ | ★★★ | ✅ | ✅ | Fast | $$ |
 | [**Nougat**](https://github.com/facebookresearch/nougat) | ✅ | Local | MIT | ★★★ | ★★☆ | ★★☆ | — | — | Slow | Free |
 | [**Surya**](https://github.com/VikParuchuri/surya) | ✅ | Local | GPL | ★★☆ | ★★★ | ★★☆ | ✅ | ✅ | Medium | Free |
+| [**Unlimited-OCR**](https://github.com/baidu/Unlimited-OCR) | ✅ | Local/VLM | MIT | ★★★ | ★★★ | ★★★ | — | — | Slow | Free |
 | [**MarkItDown**](https://github.com/microsoft/markitdown) | ✅ | Local | MIT | ★★☆ | ★☆☆ | ★★☆ | — | — | Fast | Free |
 
 **★★★** Excellent **★★☆** Good **★☆☆** Basic **☆☆☆** Not supported — **$$** ~$1-3/1K pages **$$$** ~$5-15/1K pages — **BBox** Bounding boxes — **Conf** Confidence scores
@@ -109,6 +110,7 @@ for name, res in results.items():
 | [**Azure Doc Intel**](https://azure.microsoft.com/en-us/products/ai-services/ai-document-intelligence) | SaaS | Paid | PDF, Office, HTML, images | N/A | `pip install docfold[azure-docint]` |
 | [**Nougat**](https://github.com/facebookresearch/nougat) | Local | MIT (code) | PDF | Recommended | `pip install docfold[nougat]` |
 | [**Surya**](https://github.com/VikParuchuri/surya) | Local | GPL-3.0 | PDF, images | Optional | `pip install docfold[surya]` |
+| [**Unlimited-OCR**](https://github.com/baidu/Unlimited-OCR) | Local/VLM | MIT | PDF, images | Required | `pip install docfold[unlimited-ocr]` |
 | [**MarkItDown**](https://github.com/microsoft/markitdown) | Local | MIT | PDF, Office, HTML, images, CSV/JSON/XML, ePub, audio, ZIP | No | `pip install docfold[markitdown]` |
 
 > **Adding your own engine?** Implement the `DocumentEngine` interface — see [Adding a Custom Engine](#adding-a-custom-engine) below.
@@ -335,6 +337,7 @@ Docfold builds on and integrates with these excellent projects:
 | [Zerox](https://github.com/getomni-ai/zerox) | Model-agnostic Vision LLM OCR |
 | [Nougat](https://github.com/facebookresearch/nougat) | Meta's academic PDF to Markdown model |
 | [Surya](https://github.com/VikParuchuri/surya) | Multilingual OCR + layout analysis |
+| [Unlimited-OCR](https://github.com/baidu/Unlimited-OCR) | Baidu's one-shot long-horizon document-parsing VLM |
 
 ### Built by
 

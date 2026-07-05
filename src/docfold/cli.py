@@ -201,6 +201,11 @@ def _build_router():
         router.register(FirecrawlEngine())
     except Exception:
         pass
+    try:
+        from docfold.engines.markitdown_engine import MarkItDownEngine
+        router.register(MarkItDownEngine())
+    except Exception:
+        pass
 
     return router
 

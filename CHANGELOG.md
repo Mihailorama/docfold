@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **MarkItDown engine now registered in the CLI** — `_build_router()` in `docfold.cli` was missing the MarkItDown adapter, so `docfold engines` did not list it and `docfold convert -e markitdown` failed with "Unknown engine". The engine is now registered like the other adapters and selectable from the command line.
+
 ### Changed
 
 - **MinerU engine upgraded to MinerU 2.x** — the adapter now targets the current

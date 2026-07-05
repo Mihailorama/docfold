@@ -18,6 +18,12 @@ class TestBuildRouter:
         engines = router.list_engines()
         assert isinstance(engines, list)
 
+    def test_registers_markitdown(self):
+        # The adapter lazy-imports markitdown, so registration must succeed
+        # even when the dependency is missing; is_available() gates selection.
+        router = _build_router()
+        assert router.get("markitdown") is not None
+
 
 class TestMainNoArgs:
     def test_no_args_prints_help(self, capsys):

@@ -1,6 +1,6 @@
 ---
 purpose: "Agent-first distribution: MCP server, install/doctor/update CLI, agent onboarding docs, landing page, release tooling"
-status: "OPEN"
+status: "DONE"
 priority: "P1"
 created: "2026-07-23"
 ---
@@ -67,23 +67,23 @@ core (argparse instead of Typer, stdlib urllib instead of httpx):
 
 ### Unit / Functional Tests
 
-- [ ] `test_mcp_server.py`: exit 2 + hint without `mcp`; four tools
+- [x] `test_mcp_server.py`: exit 2 + hint without `mcp`; four tools
       registered; parse_document happy path (monkeypatched router);
       URL input downloads to temp file; structured failure payload;
       extract_tables returns tables / empty list; classify_document;
       token budget ≤ 1000 (chars/4 estimate)
-- [ ] `test_install.py`: plans for all five clients; cursor merge preserves
+- [x] `test_install.py`: plans for all five clients; cursor merge preserves
       foreign servers; idempotent re-run; unknown client raises
-- [ ] `test_update.py`: is_newer comparisons; build_update_argv with extras;
+- [x] `test_update.py`: is_newer comparisons; build_update_argv with extras;
       latest_version parses PyPI JSON (mocked)
-- [ ] `test_cli.py`: doctor text/JSON; install --print-only / --json;
+- [x] `test_cli.py`: doctor text/JSON; install --print-only / --json;
       update --check --json (mocked); --version
 
 ### Integration / E2E Tests
 
-- [ ] Real stdio round-trip: spawn `docfold-mcp`, list tools (requires mcp
+- [x] Real stdio round-trip: spawn `docfold-mcp`, list tools (requires mcp
       extra; skipped otherwise)
-- [ ] Landing rendered in headless Chromium at 1280/390, screenshots reviewed
+- [x] Landing rendered in headless Chromium at 1280/390, screenshots reviewed
 
 ### Test Commands
 

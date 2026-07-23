@@ -1,14 +1,19 @@
-"""MinerU / PDF-Extract-Kit engine adapter.
+"""MinerU 2.x engine adapter.
 
 Install: ``pip install docfold[mineru]``
 
-Note: First run downloads model weights (~2-5 GB).
+Built on `MinerU <https://github.com/opendatalab/MinerU>`_ (the ``mineru``
+package, formerly ``magic-pdf``). Uses the supported programmatic entry point
+:func:`mineru.cli.common.do_parse`.
+
+Note: First run downloads model weights (~1-3 GB).
 License: AGPL-3.0 — see https://github.com/opendatalab/MinerU
 """
 
 from __future__ import annotations
 
 import logging
+import os
 import tempfile
 import time
 from typing import Any
@@ -20,54 +25,39 @@ logger = logging.getLogger(__name__)
 _SUPPORTED_EXTENSIONS = {"pdf"}
 
 # Lazy-loaded at first use; patchable in tests.
-PymuDocDataset: Any = None
-SupportedPdfParseMethod: Any = None
-FileBasedDataWriter: Any = None
-doc_analyze: Any = None
-convert_pdf_bytes_to_bytes_by_pymupdf: Any = None
+do_parse: Any = None
+read_fn: Any = None
 
 
 def _ensure_imports() -> None:
-    """Import magic_pdf dependencies on first use."""
-    global PymuDocDataset, SupportedPdfParseMethod, FileBasedDataWriter
-    global doc_analyze, convert_pdf_bytes_to_bytes_by_pymupdf
-    if PymuDocDataset is not None:
+    """Import the ``mineru`` programmatic API on first use."""
+    global do_parse, read_fn
+    if do_parse is not None:
         return
-    from magic_pdf.config.enums import SupportedPdfParseMethod as _SPM  # noqa: N814
-    from magic_pdf.data.data_reader_writer import FileBasedDataWriter as _FBDW  # noqa: N814
-    from magic_pdf.data.dataset import PymuDocDataset as _PDD  # noqa: N814
-    try:
-        from magic_pdf.libs.pdf_utils import (
-            convert_pdf_bytes_to_bytes_by_pymupdf as _convert,
-        )
-    except (ImportError, ModuleNotFoundError):
-        from magic_pdf.tools.common import (
-            convert_pdf_bytes_to_bytes_by_pymupdf as _convert,
-        )
+    from mineru.cli.common import do_parse as _do_parse
+    from mineru.cli.common import read_fn as _read_fn
 
-    # doc_analyze location varies across magic-pdf versions.
-    try:
-        from magic_pdf.operators.models import doc_analyze as _da
-    except ImportError:
-        from magic_pdf.model.doc_analyze_by_custom_model import doc_analyze as _da
-
-    PymuDocDataset = _PDD
-    SupportedPdfParseMethod = _SPM
-    FileBasedDataWriter = _FBDW
-    doc_analyze = _da
-    convert_pdf_bytes_to_bytes_by_pymupdf = _convert
+    do_parse = _do_parse
+    read_fn = _read_fn
 
 
 class MinerUEngine(DocumentEngine):
-    """Adapter for MinerU (magic-pdf), the end-to-end PDF structuring tool
-    built on PDF-Extract-Kit.
+    """Adapter for MinerU 2.x, the end-to-end PDF structuring tool.
 
     See https://github.com/opendatalab/MinerU
     """
 
-    def __init__(self, config_path: str | None = None, gpu: bool = False) -> None:
+    def __init__(
+        self,
+        config_path: str | None = None,
+        gpu: bool = False,
+        backend: str = "pipeline",
+        parse_method: str = "auto",
+    ) -> None:
         self._config_path = config_path
         self._gpu = gpu
+        self._backend = backend
+        self._parse_method = parse_method
 
     @property
     def name(self) -> str:
@@ -85,7 +75,7 @@ class MinerUEngine(DocumentEngine):
 
     def is_available(self) -> bool:
         try:
-            import magic_pdf  # noqa: F401
+            import mineru  # noqa: F401
             return True
         except ImportError:
             return False
@@ -121,69 +111,76 @@ class MinerUEngine(DocumentEngine):
     ) -> tuple[str, dict]:
         _ensure_imports()
 
-        # PyTorch 2.6+ defaults weights_only=True which breaks loading
-        # doclayout_yolo model weights containing custom classes.
-        try:
-            import doclayout_yolo.nn.tasks as _tasks
-            import torch
-            _safe_classes = [
-                cls for cls in vars(_tasks).values()
-                if isinstance(cls, type)
-            ]
-            # The YOLO checkpoint also requires dill._dill._load_type
-            try:
-                from dill._dill import _load_type
-                _safe_classes.append(_load_type)
-            except ImportError:
-                pass
-            if _safe_classes:
-                torch.serialization.add_safe_globals(_safe_classes)
-        except Exception:
-            pass
-
+        backend = kwargs.get("backend", self._backend)
+        parse_method = kwargs.get("parse_method", self._parse_method)
+        lang = kwargs.get("lang") or "ch"
         start_page = kwargs.get("start_page")
         end_page = kwargs.get("end_page")
-        lang = kwargs.get("lang")
+        want_json = output_format == OutputFormat.JSON
 
-        with open(file_path, "rb") as f:
-            pdf_bytes = f.read()
+        pdf_bytes = read_fn(file_path)
+        name = "document"
 
-        if start_page is not None or end_page is not None:
-            pdf_bytes = convert_pdf_bytes_to_bytes_by_pymupdf(
-                pdf_bytes,
-                start_page or 0,
-                end_page,
+        with tempfile.TemporaryDirectory() as out_dir:
+            do_parse(
+                output_dir=out_dir,
+                pdf_file_names=[name],
+                pdf_bytes_list=[pdf_bytes],
+                p_lang_list=[lang],
+                backend=backend,
+                parse_method=parse_method,
+                start_page_id=start_page if start_page is not None else 0,
+                end_page_id=end_page,
+                f_dump_md=not want_json,
+                f_dump_content_list=want_json,
+                f_draw_layout_bbox=False,
+                f_draw_span_bbox=False,
+                f_dump_middle_json=False,
+                f_dump_model_output=False,
+                f_dump_orig_pdf=False,
             )
 
-        ds = PymuDocDataset(pdf_bytes, lang=lang)
-        classify_result = ds.classify()
-        is_text_pdf = classify_result == SupportedPdfParseMethod.TXT
-
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            image_writer = FileBasedDataWriter(tmp_dir)
-
-            infer_result = ds.apply(
-                doc_analyze,
-                ocr=not is_text_pdf,
-                lang=lang,
-            )
-
-            if is_text_pdf:
-                pipe_result = infer_result.pipe_txt_mode(
-                    image_writer, debug_mode=False, lang=lang,
-                )
+            md_dir = os.path.join(out_dir, name, self._output_subdir(backend, parse_method))
+            if want_json:
+                target = os.path.join(md_dir, f"{name}_content_list.json")
             else:
-                pipe_result = infer_result.pipe_ocr_mode(
-                    image_writer, debug_mode=False, lang=lang,
+                target = os.path.join(md_dir, f"{name}.md")
+
+            if not os.path.exists(target):
+                raise RuntimeError(
+                    f"MinerU did not produce expected output at {target!r}. "
+                    f"Output dir contents: {self._list_dir(out_dir)}"
                 )
 
-            if output_format == OutputFormat.JSON:
-                content = pipe_result.get_content_list(tmp_dir)
-            else:
-                content = pipe_result.get_markdown(tmp_dir)
+            with open(target, encoding="utf-8") as f:
+                content = f.read()
 
         metadata = {
-            "method": "txt" if is_text_pdf else "ocr",
+            "backend": backend,
+            "parse_method": parse_method,
+            "lang": lang,
         }
 
         return content, metadata
+
+    @staticmethod
+    def _output_subdir(backend: str, parse_method: str) -> str:
+        """Subdirectory ``do_parse`` writes into, per backend.
+
+        Mirrors upstream ``mineru.cli.common.do_parse``: pipeline → the
+        ``parse_method`` name (e.g. ``auto``); vlm family → ``vlm``;
+        hybrid family → ``hybrid_<parse_method>``.
+        """
+        if backend.startswith("vlm"):
+            return "vlm"
+        if backend.startswith("hybrid"):
+            return f"hybrid_{parse_method}"
+        return parse_method
+
+    @staticmethod
+    def _list_dir(root: str) -> list[str]:
+        found: list[str] = []
+        for dirpath, _dirs, files in os.walk(root):
+            for fn in files:
+                found.append(os.path.relpath(os.path.join(dirpath, fn), root))
+        return found

@@ -1,6 +1,6 @@
 ---
 purpose: "Integrate Microsoft's markitdown as a new docfold engine and include it in the benchmark harness."
-status: "IN_PROGRESS"
+status: "DONE"
 priority: "P1"
 created: "2026-04-24"
 ---
@@ -42,6 +42,9 @@ and synthetic-PDF benchmark coverage comparable to the other local engines.
    on the same 7 synthetic PDFs as the existing engines and reports CER/WER/
    time like the others.
 5. Add a row for markitdown to the two engine tables in `README.md`.
+6. Register it in the CLI's `_build_router()` so `docfold engines` lists it
+   and `docfold convert -e markitdown` works (same try/except pattern as the
+   other engines).
 
 ## Affected Files
 
@@ -54,30 +57,36 @@ and synthetic-PDF benchmark coverage comparable to the other local engines.
 - `benchmark.py` — import and register `MarkItDownEngine` in the candidate
   list.
 - `README.md` — add markitdown row to the two engine overview tables.
+- `src/docfold/cli.py` — register `MarkItDownEngine` in `_build_router()`.
+- `tests/test_cli.py` — test that the CLI router registers markitdown.
 
 ## Test Plan
 
 ### Unit / Functional Tests
 
-- [ ] `test_name` — engine name is `"markitdown"`.
-- [ ] `test_supported_extensions` — covers PDF, DOCX, PPTX, XLSX, HTML, images,
+- [x] `test_name` — engine name is `"markitdown"`.
+- [x] `test_supported_extensions` — covers PDF, DOCX, PPTX, XLSX, HTML, images,
       CSV, JSON, XML, ePub.
-- [ ] `test_capabilities_defaults_to_empty` — no bboxes/confidence etc.
-- [ ] `test_is_available_true_when_importable` — patched import succeeds.
-- [ ] `test_is_available_false_when_missing` — `ImportError` short-circuits.
-- [ ] `test_process_markdown_returns_engine_result` — mock the `MarkItDown`
+- [x] `test_capabilities_defaults_to_empty` — no bboxes/confidence etc.
+- [x] `test_is_available_true_when_importable` — patched import succeeds.
+- [x] `test_is_available_false_when_missing` — `ImportError` short-circuits.
+- [x] `test_process_markdown_returns_engine_result` — mock the `MarkItDown`
       class so `convert(...).text_content` is a known Markdown string; assert
       the `EngineResult` fields (content, format, engine_name, time).
-- [ ] `test_process_runs_convert_in_executor` — the synchronous `convert` call
+- [x] `test_process_runs_convert_in_executor` — the synchronous `convert` call
       must be dispatched via `loop.run_in_executor` so we don't block the
       event loop.
-- [ ] `test_process_missing_dependency_raises` — when markitdown isn't
+- [x] `test_process_missing_dependency_raises` — when markitdown isn't
       installed, `.process()` should raise a clear `RuntimeError` (or similar)
       so callers see *why* it failed.
+- [x] `test_build_router_registers_markitdown` — the CLI's `_build_router()`
+      must register the markitdown engine (registration is unconditional; the
+      lazy import means the adapter module loads even without the dependency,
+      and `is_available()` gates actual selection).
 
 ### Integration / E2E Tests
 
-- [ ] `benchmark.py` runs on a host where `markitdown` is installed and
+- [x] `benchmark.py` runs on a host where `markitdown` is installed and
       produces a row for it in the summary table.
 
 ### Test Commands

@@ -8,10 +8,13 @@ import sys
 
 
 def main(argv: list[str] | None = None) -> None:
+    import docfold
+
     parser = argparse.ArgumentParser(
         prog="docfold",
         description="Turn any document into structured data.",
     )
+    parser.add_argument("--version", action="version", version=docfold.__version__)
     sub = parser.add_subparsers(dest="command")
 
     # --- convert ---
@@ -59,6 +62,42 @@ def main(argv: list[str] | None = None) -> None:
         help="Output file for evaluation report (JSON).",
     )
 
+    # --- install ---
+    install_p = sub.add_parser("install", help="Register the docfold MCP server in an AI client")
+    install_p.add_argument(
+        "client",
+        nargs="?",
+        default="generic",
+        help="claude | codex | cursor | vscode | generic (default: generic)",
+    )
+    install_p.add_argument(
+        "--print-only",
+        action="store_true",
+        help="Show what would be done without executing.",
+    )
+    install_p.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit the generic mcpServers config JSON and exit.",
+    )
+
+    # --- doctor ---
+    doctor_p = sub.add_parser("doctor", help="Health check: version, MCP extra, engines")
+    doctor_p.add_argument("--json", action="store_true", help="Emit JSON report to stdout.")
+
+    # --- update ---
+    update_p = sub.add_parser("update", help="Self-update docfold via PyPI")
+    update_p.add_argument(
+        "--check",
+        action="store_true",
+        help="Only check PyPI for a newer version; don't install.",
+    )
+    update_p.add_argument(
+        "--extras",
+        help='Comma-separated extras to include in the upgrade (e.g. "mcp,docling").',
+    )
+    update_p.add_argument("--json", action="store_true", help="Emit JSON (with --check).")
+
     args = parser.parse_args(argv)
 
     if args.command is None:
@@ -73,6 +112,12 @@ def main(argv: list[str] | None = None) -> None:
         asyncio.run(_cmd_compare(args))
     elif args.command == "evaluate":
         asyncio.run(_cmd_evaluate(args))
+    elif args.command == "install":
+        _cmd_install(args)
+    elif args.command == "doctor":
+        _cmd_doctor(args)
+    elif args.command == "update":
+        _cmd_update(args)
 
 
 def _build_router():
@@ -318,6 +363,104 @@ async def _cmd_evaluate(args) -> None:
         print(f"Report written to {args.output}")
     else:
         print(report_json)
+
+
+def _cmd_install(args) -> None:
+    import json
+
+    from docfold import install as install_mod
+
+    if args.json:
+        print(json.dumps(install_mod.mcp_config(), indent=2))
+        return
+
+    try:
+        plan = install_mod.plan_install(args.client)
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        print(install_mod.apply_plan(plan, print_only=args.print_only))
+    except Exception as exc:
+        print(f"install failed for {args.client}: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+
+def _doctor_report() -> dict:
+    """Collect the health-check data for ``docfold doctor``."""
+    import importlib.util
+    import platform
+
+    import docfold
+
+    engines = {
+        e["name"]: "ok" if e["available"] else "unavailable (extra not installed)"
+        for e in _build_router().list_engines()
+    }
+    return {
+        "version": docfold.__version__,
+        "python": platform.python_version(),
+        "mcp_extra": importlib.util.find_spec("mcp") is not None,
+        "engines": engines,
+    }
+
+
+def _cmd_doctor(args) -> None:
+    import json
+
+    report = _doctor_report()
+
+    if args.json:
+        print(json.dumps(report))
+        return
+
+    print(f"docfold {report['version']} · python {report['python']}")
+    if report["mcp_extra"]:
+        print("mcp extra: installed (docfold-mcp ready)")
+    else:
+        print('mcp extra: NOT installed — pip install "docfold[mcp]" for the MCP server')
+
+    ok = [name for name, status in report["engines"].items() if status == "ok"]
+    missing = {n: s for n, s in report["engines"].items() if s != "ok"}
+    print(f"engines: {len(ok)}/{len(report['engines'])} available")
+    for name, status in missing.items():
+        print(f"  {name}: {status}")
+
+
+def _cmd_update(args) -> None:
+    import json
+    import subprocess
+
+    import docfold
+    from docfold import update as update_mod
+
+    current = docfold.__version__
+
+    if args.check:
+        try:
+            latest = update_mod.latest_version()
+        except Exception as exc:
+            print(f"update check failed: {exc}", file=sys.stderr)
+            sys.exit(1)
+        newer = update_mod.is_newer(latest, current)
+        if args.json:
+            print(json.dumps({"current": current, "latest": latest, "update_available": newer}))
+            return
+        if newer:
+            print(f"update available: {current} → {latest} (run: docfold update)")
+        else:
+            print(f"up to date: {current}")
+        return
+
+    update_argv = update_mod.build_update_argv(args.extras)
+    print(f"running: {' '.join(update_argv)}", file=sys.stderr)
+    try:
+        subprocess.run(update_argv, check=True)
+    except Exception as exc:
+        print(f"update failed: {exc}", file=sys.stderr)
+        sys.exit(1)
+    print("updated — run 'docfold doctor' to verify")
 
 
 if __name__ == "__main__":

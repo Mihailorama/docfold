@@ -7,12 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-07-23
+
+### Added
+
+- **MCP server (`docfold-mcp`)** — stdio server on FastMCP (official `mcp` SDK, new optional extra `[mcp]`) with four tools: `parse_document` (file or URL → structured markdown/html/json/text), `extract_tables`, `list_engines`, `classify_document`. Tool definitions are token-budget-tested (< 1000 tokens estimated). Failures come back structured (`{"error", "failures"}`), never garbage posing as content. Install: `pip install "docfold[mcp]"`.
+- **`docfold install <client>`** — one-click MCP registration for `claude` / `codex` / `cursor` / `vscode` / `generic`. Invokes the client's own CLI (`claude mcp add …`) when available; for Cursor merges `~/.cursor/mcp.json` in place, preserving existing servers; `generic` prints the standard `mcpServers` JSON.
+- **`docfold doctor [--json]`** — health check: version, Python, MCP extra presence, per-engine availability.
+- **`docfold update [--check] [--extras …] [--json]`** — self-update via PyPI using the running interpreter's pip (stdlib urllib; core stays dependency-free).
+- **`docfold --version`**.
+- **Agent onboarding docs + landing** — `docs/install.md` (idempotent agent setup instruction), `docs/llms.txt`, and a GitHub Pages landing (`docs/index.html`) with one-click agent install CTA and a 1200×630 PNG social card.
+- **Tag release workflow** — `.github/workflows/tag-release.yml` creates release tags via `workflow_dispatch` (verifies the tag matches `__version__`); CI must then be dispatched manually on the tag.
+
+- **Unlimited-OCR engine adapter** — wraps Baidu's open-weight [`Unlimited-OCR`](https://github.com/baidu/Unlimited-OCR) document-parsing VLM (loaded from HuggingFace via `trust_remote_code`). Builds on DeepSeek-OCR with Reference Sliding Window Attention (R-SWA) for one-shot long-horizon parsing. Supports `gundam` and `base` modes, images, and PDFs (rendered to images via PyMuPDF), emitting Markdown/HTML/JSON. Registered in the router for PDF and image inputs. Install: `pip install docfold[unlimited-ocr]` (requires a CUDA GPU).
+
 ### Fixed
 
 - **MarkItDown engine now registered in the CLI** — `_build_router()` in `docfold.cli` was missing the MarkItDown adapter, so `docfold engines` did not list it and `docfold convert -e markitdown` failed with "Unknown engine". The engine is now registered like the other adapters and selectable from the command line.
 
 ### Changed
 
+- **Single-source version** — `pyproject.toml` now reads the version from `src/docfold/__init__.py` via hatch dynamic versioning (fixes the 0.6.13 vs 0.6.0 drift between package metadata and `__version__`).
 - **MinerU engine upgraded to MinerU 2.x** — the adapter now targets the current
   [`mineru`](https://github.com/opendatalab/MinerU) package (formerly `magic-pdf`)
   via its supported `mineru.cli.common.do_parse` API. The dependency extra changed
@@ -22,9 +37,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   shape are unchanged. **Breaking for installs:** reinstall with
   `pip install -U docfold[mineru]` to pull `mineru` 2.x.
 
-### Added
+### Added (pre-0.7.0, previously unreleased)
 
-- **Unlimited-OCR engine adapter** — wraps Baidu's open-weight [`Unlimited-OCR`](https://github.com/baidu/Unlimited-OCR) document-parsing VLM (loaded from HuggingFace via `trust_remote_code`). Builds on DeepSeek-OCR with Reference Sliding Window Attention (R-SWA) for one-shot long-horizon parsing. Supports `gundam` and `base` modes, images, and PDFs (rendered to images via PyMuPDF), emitting Markdown/HTML/JSON. Registered in the router for PDF and image inputs. Install: `pip install docfold[unlimited-ocr]` (requires a CUDA GPU).
 - **MarkItDown engine adapter** — wraps Microsoft's [`markitdown`](https://github.com/microsoft/markitdown) pure-Python library that converts Office files, PDFs, HTML, images, CSV/JSON/XML, ePub, audio, and ZIP archives into LLM-friendly Markdown. Added to the `benchmark.py` harness alongside the other local engines. Install: `pip install docfold[markitdown]`.
 - **Non-PDF benchmark fixtures** — `benchmark.py` now also generates synthetic DOCX (built with stdlib `zipfile` + minimal Office Open XML, no extra deps), HTML, and CSV documents, and filters engines per-doc by `supported_extensions` so PyMuPDF / OCR engines no longer log spurious errors on Office or web fixtures.
 - **OpenDataLoader PDF engine adapter** — wraps the Java-based [`opendataloader-pdf`](https://github.com/opendataloader-project/opendataloader-pdf) tool (via its bundled-JAR Python wheel). Local, deterministic extraction with typed structural elements (heading, paragraph, table, list, header, footer) and per-element bounding boxes. Install: `pip install docfold[opendataloader]` (also requires Java 11+).

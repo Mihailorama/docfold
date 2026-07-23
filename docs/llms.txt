@@ -1,0 +1,18 @@
+# docfold
+
+> Unified Python interface over 20+ document-structuring engines — PDF, DOCX,
+> XLSX, PPTX, HTML, and images → structured, LLM-ready markdown/JSON, with
+> extension-aware routing and automatic engine fallback. Open source, MIT.
+> Ships a CLI (`docfold`) and an MCP server (`docfold-mcp`).
+
+## Setup
+
+- [Agent setup instructions](https://mihailorama.github.io/docfold/install.md):
+  install, verify the CLI, and register the MCP server in one command
+  (`docfold install claude|codex|cursor|vscode|generic`).
+
+## Docs
+
+- [README](https://github.com/mihailorama/docfold/blob/main/README.md)
+- [Evaluation framework](https://github.com/mihailorama/docfold/blob/main/docs/evaluation.md)
+- [Benchmarks](https://github.com/mihailorama/docfold/blob/main/docs/benchmarks.md)

@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Docfold — turn any document into structured data</title>
+<meta name="description" content="One async Python interface over 20+ document-parsing engines — PDF, DOCX, XLSX, HTML, images → structured, LLM-ready markdown/JSON, with extension-aware routing and automatic fallback. Open source, MIT.">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="canonical" href="https://mihailorama.github.io/docfold/">
+
+<!-- Open Graph / Twitter -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Docfold — turn any document into structured data">
+<meta property="og:description" content="One async Python interface over 20+ document-parsing engines, with extension-aware routing, automatic fallback, and LLM-ready output.">
+<meta property="og:url" content="https://mihailorama.github.io/docfold/">
+<meta property="og:image" content="https://mihailorama.github.io/docfold/assets/social-card.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Docfold — turn any document into structured data">
+<meta name="twitter:description" content="One async Python interface over 20+ document-parsing engines, with extension-aware routing, automatic fallback, and LLM-ready output.">
+<meta name="twitter:image" content="https://mihailorama.github.io/docfold/assets/social-card.png">
+
+<style>
+  :root {
+    --bg: #0B1214;
+    --bg-soft: #101A1D;
+    --card: #142226;
+    --border: #22383E;
+    --text: #E9F4F2;
+    --muted: #92B5B0;
+    --dim: #6E948F;
+    --accent: #2DD4BF;
+    --accent-2: #0EA5A0;
+    --ok: #4ADE80;
+    --maxw: 1040px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 64px; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  a:focus-visible, button:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px;
+  }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+  code, pre { font-family: "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace; }
+
+  /* Skip link (keyboard users) */
+  .skip {
+    position: absolute; left: -9999px; top: 0; z-index: 100;
+    background: var(--card); color: var(--text); padding: 10px 18px;
+    border-radius: 0 0 10px 0; font-weight: 600;
+  }
+  .skip:focus { left: 0; }
+
+  /* Sticky top nav */
+  .topnav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(11, 18, 20, .84);
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  .topnav .in {
+    max-width: var(--maxw); margin: 0 auto; padding: 11px 24px;
+    display: flex; align-items: center; gap: 18px;
+  }
+  .topnav .brand { display: inline-flex; align-items: center; gap: 9px; color: var(--text); font-weight: 800; font-size: 15px; }
+  .topnav .brand img { height: 22px; width: 22px; }
+  .topnav .brand:hover { text-decoration: none; }
+  .topnav .links { margin-left: auto; display: flex; gap: 20px; flex-wrap: wrap; }
+  .topnav .links a { color: var(--muted); font-size: 14px; font-weight: 600; }
+  .topnav .links a:hover { color: var(--text); text-decoration: none; }
+  .topnav .links a.gh { color: var(--accent); }
+
+  /* Hero */
+  header.hero {
+    text-align: center;
+    padding: 72px 24px 48px;
+    background: radial-gradient(1100px 480px at 50% -10%, #16323A 0%, var(--bg) 70%);
+  }
+  .hero img.logo { width: 88px; height: 88px; }
+  .hero h1 { font-size: clamp(28px, 5vw, 44px); margin: 24px 0 8px; letter-spacing: -1px; }
+  .hero p.tag { font-size: clamp(16px, 2.4vw, 20px); color: var(--muted); margin: 0 auto 28px; max-width: 640px; }
+  .stats { color: var(--dim); font-size: 14px; margin: 18px 0 0; line-height: 1.9; }
+  .stats strong { color: var(--text); }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 9px;
+    padding: 13px 22px; border-radius: 11px; font-weight: 700; font-size: 16px;
+    border: 1.5px solid var(--border); transition: transform .12s ease, border-color .12s ease;
+  }
+  .btn:hover { text-decoration: none; transform: translateY(-2px); border-color: var(--accent); }
+  .btn:active { transform: translateY(0); }
+  .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #06211E; border-color: transparent; }
+  .btn-primary:hover { border-color: transparent; box-shadow: 0 6px 24px rgba(45, 212, 191, .3); }
+  .btn-ghost { background: var(--bg-soft); color: var(--text); }
+  .pip {
+    display: inline-flex; align-items: center; gap: 10px;
+    margin-top: 22px; padding: 12px 18px; border-radius: 11px;
+    background: var(--bg-soft); border: 1.5px solid var(--border);
+    font: inherit; font-size: 15px; color: var(--text); cursor: pointer;
+    transition: border-color .12s ease;
+  }
+  .pip:hover { border-color: var(--accent); }
+  .pip .prompt { color: var(--accent); font-weight: 700; }
+  .pip .copy { color: var(--dim); font-size: 12px; margin-left: 4px; }
+  .copy.ok { color: var(--ok); }
+
+  /* Agent setup prompt — the primary CTA */
+  .agent-cta { margin-top: 30px; }
+  .agent-cta .btn { cursor: pointer; font-family: inherit; }
+  .btn-lg { font-size: 17px; padding: 16px 28px; }
+  .btn-primary .copy { color: rgba(6, 33, 30, .7); }
+  .hero-links { color: var(--dim); font-size: 14px; margin: 10px 0 0; }
+  .hero-links a { color: var(--dim); font-weight: 600; }
+  .hero-links a:hover { color: var(--muted); }
+  .agent-fetch { color: var(--dim); font-size: 13.5px; margin-top: 10px; }
+  .agent-fetch code {
+    color: var(--muted); background: var(--bg-soft);
+    border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px;
+    display: inline-block; max-width: 100%; overflow-wrap: anywhere;
+  }
+
+  /* Sections */
+  section { padding: 56px 0; border-top: 1px solid var(--border); scroll-margin-top: 64px; }
+  section h2 { font-size: clamp(22px, 3.4vw, 30px); margin: 0 0 8px; letter-spacing: -0.5px; }
+  section .lead { color: var(--muted); margin: 0 0 32px; max-width: 680px; }
+  .cta-row { display: flex; gap: 14px; flex-wrap: wrap; margin: 28px 0 8px; }
+
+  /* Why cards */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px 22px; transition: border-color .15s ease; }
+  .card:hover { border-color: #35565E; }
+  .card h3 { margin: 0 0 6px; font-size: 16px; }
+  .card .before { color: var(--dim); font-size: 14px; }
+  .card .after { color: var(--ok); font-size: 14px; margin-top: 4px; }
+  .card .after code, .card .before code { background: var(--bg); padding: 1px 6px; border-radius: 5px; font-size: 13px; }
+
+  /* Engine grid */
+  .engines { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .engine { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; transition: border-color .15s ease; }
+  .engine:hover { border-color: #35565E; }
+  .engine .name { font-weight: 700; font-size: 15px; }
+  .engine .type { font-size: 11.5px; color: var(--dim); text-transform: uppercase; letter-spacing: .5px; }
+  .engine .caps { font-size: 13px; color: var(--muted); margin-top: 7px; }
+
+  /* How to choose */
+  .choose { list-style: none; padding: 0; margin: 0; }
+  .choose li { display: flex; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .choose .sit { flex: 1 1 280px; color: var(--text); }
+  .choose .rec { flex: 1 1 280px; color: var(--muted); }
+  .choose .rec strong { color: var(--accent); }
+
+  /* Code */
+  pre { background: var(--bg-soft); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; overflow-x: auto; font-size: 14px; color: #CFE8E4; }
+  pre .c { color: var(--dim); }
+  pre .k { color: var(--accent); }
+  pre .s { color: var(--ok); }
+
+  /* Footer */
+  footer { padding: 56px 0 72px; border-top: 1px solid var(--border); text-align: center; }
+  footer .eco { display: flex; gap: 22px; justify-content: center; flex-wrap: wrap; margin: 18px 0 28px; }
+  footer .eco a { color: var(--muted); font-weight: 600; }
+  footer .connect { color: var(--dim); font-size: 14px; margin-top: 14px; }
+  footer .byline { color: var(--dim); font-size: 13px; margin-top: 26px; }
+
+  @media (max-width: 720px) {
+    html { scroll-padding-top: 100px; }
+    section { scroll-margin-top: 100px; }
+    .grid2, .engines { grid-template-columns: 1fr; }
+    .topnav .links { gap: 14px; }
+    .topnav .links a.hide-sm { display: none; }
+    pre { font-size: 13px; padding: 14px 16px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { transition: none !important; }
+    .btn:hover { transform: none; }
+  }
+</style>
+</head>
+<body>
+
+<a class="skip" href="#agents">Skip to content</a>
+
+<nav class="topnav" aria-label="Main">
+  <div class="in">
+    <a class="brand" href="#top"><img src="assets/favicon.svg" alt="">Docfold</a>
+    <div class="links">
+      <a href="#agents">For AI agents</a>
+      <a class="hide-sm" href="#why">Why</a>
+      <a href="#engines">Engines</a>
+      <a href="#quickstart">Quickstart</a>
+      <a class="gh" href="https://github.com/mihailorama/docfold">GitHub ↗</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <img class="logo" src="assets/favicon.svg" alt="">
+  <h1>Turn any document into structured data.</h1>
+  <p class="tag">One async Python interface over <strong>20+ parsing engines</strong> — PDF, DOCX, XLSX, HTML, images → LLM-ready markdown/JSON, with extension-aware routing and automatic fallback. Open source, MIT.</p>
+
+  <div class="agent-cta">
+    <button class="btn btn-primary btn-lg" id="agentPrompt" title="Click to copy"
+      data-copy="Fetch https://mihailorama.github.io/docfold/install.md and follow the instructions: install docfold, verify the CLI, and register the docfold MCP server in this coding agent.">
+      🤖 Copy setup prompt for my agent <span class="copy" id="agentPromptLabel" aria-live="polite">copy</span>
+    </button>
+    <div class="agent-fetch">or just tell your agent: <code>fetch https://mihailorama.github.io/docfold/install.md</code></div>
+  </div>
+
+  <div>
+    <button class="pip" id="pip" title="Click to copy">
+      <span class="prompt">$</span><span>pip install docfold</span><span class="copy" id="copyLabel" aria-live="polite">copy</span>
+    </button>
+  </div>
+
+  <p class="stats"><strong>20+ engines</strong> · <strong>local, OCR &amp; cloud tiers</strong> · <strong>built-in evaluation framework</strong> · <strong>350+ tests</strong> · <strong>MIT</strong></p>
+  <p class="hero-links"><a href="https://github.com/mihailorama/docfold">⭐ Star on GitHub</a> · <a href="https://pypi.org/project/docfold/">PyPI</a></p>
+</header>
+
+<main>
+
+<section id="agents">
+  <div class="wrap">
+    <h2>One-click install for AI agents</h2>
+    <p class="lead">docfold ships a CLI (<code>docfold</code>) and an MCP server (<code>docfold-mcp</code>) with four tools — <code>parse_document</code>, <code>extract_tables</code>, <code>list_engines</code>, <code>classify_document</code>. All four definitions cost your agent <strong>under 1000 tokens</strong> (budget-tested). Failures come back structured (<code>{error, failures}</code>) — never garbage posing as content. One command registers it in your client:</p>
+<pre><span class="k">$</span> pip install <span class="s">"docfold[mcp,pymupdf]"</span>
+<span class="k">$</span> docfold install claude   <span class="c"># Claude Code</span>
+<span class="k">$</span> docfold install codex    <span class="c"># Codex CLI</span>
+<span class="k">$</span> docfold install cursor   <span class="c"># Cursor</span>
+<span class="k">$</span> docfold install vscode   <span class="c"># VS Code</span></pre>
+    <div class="cta-row">
+      <a class="btn btn-ghost" href="cursor://anysphere.cursor-deeplink/mcp/install?name=docfold&amp;config=eyJjb21tYW5kIjogImRvY2ZvbGQtbWNwIiwgImFyZ3MiOiBbXX0=">Add to Cursor</a>
+      <button class="btn btn-ghost" id="mcpConfig" title="Click to copy"
+        data-copy='{"mcpServers":{"docfold":{"command":"docfold-mcp","args":[]}}}'>
+        Copy MCP config JSON <span class="copy" id="mcpConfigLabel" aria-live="polite">copy</span>
+      </button>
+    </div>
+    <p class="lead" style="margin-top:18px">Any other client: paste the config JSON above into its MCP settings. Full agent instructions live at <a href="install.md">install.md</a> — fetchable by any agent.</p>
+  </div>
+</section>
+
+<section id="why">
+  <div class="wrap">
+    <h2>Why Docfold?</h2>
+    <p class="lead">Every document parser has trade-offs — speed, tables, scans, cost. Docfold lets you switch between them with one line, and falls back automatically when an engine fails on a file.</p>
+    <div class="grid2">
+      <div class="card">
+        <h3>Try a new parser</h3>
+        <div class="before">Before: rewrite your pipeline for each SDK</div>
+        <div class="after">After: change one string — <code>engine_hint="docling"</code></div>
+      </div>
+      <div class="card">
+        <h3>Scanned or born-digital?</h3>
+        <div class="before">Before: guess, then watch OCR mangle clean PDFs</div>
+        <div class="after">After: <code>pre_analyze()</code> → pdf_text vs pdf_scanned routing</div>
+      </div>
+      <div class="card">
+        <h3>Engine fails on a file</h3>
+        <div class="before">Before: hand-roll try/except chains</div>
+        <div class="after">After: router auto-falls back down the priority chain</div>
+      </div>
+      <div class="card">
+        <h3>Pick the best engine for YOUR docs</h3>
+        <div class="before">Before: trust vendor benchmarks</div>
+        <div class="after">After: <code>docfold evaluate</code> — WER/CER on your own dataset</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="engines">
+  <div class="wrap">
+    <h2>20+ engines, one interface</h2>
+    <p class="lead">Local engines are free and fast; OCR engines handle scans; cloud engines add managed accuracy. Every engine is an optional extra — install only what you use.</p>
+    <div class="engines">
+      <div class="engine"><span class="name">PyMuPDF</span> <span class="type">local</span><div class="caps">Fast text + layout from born-digital PDFs</div></div>
+      <div class="engine"><span class="name">Docling</span> <span class="type">local · IBM</span><div class="caps">Layout, tables, reading order</div></div>
+      <div class="engine"><span class="name">Marker</span> <span class="type">local · gpu</span><div class="caps">High-fidelity PDF → markdown</div></div>
+      <div class="engine"><span class="name">MinerU</span> <span class="type">local · gpu</span><div class="caps">Scientific PDFs, formulas</div></div>
+      <div class="engine"><span class="name">MarkItDown</span> <span class="type">local · microsoft</span><div class="caps">Office, HTML, CSV → markdown</div></div>
+      <div class="engine"><span class="name">Unstructured</span> <span class="type">local</span><div class="caps">Broad format coverage, chunking</div></div>
+      <div class="engine"><span class="name">Tesseract</span> <span class="type">local · ocr</span><div class="caps">Classic OCR for scans and images</div></div>
+      <div class="engine"><span class="name">PaddleOCR</span> <span class="type">local · ocr</span><div class="caps">Multilingual OCR, strong on CJK</div></div>
+      <div class="engine"><span class="name">EasyOCR</span> <span class="type">local · ocr</span><div class="caps">80+ languages, simple setup</div></div>
+      <div class="engine"><span class="name">Surya</span> <span class="type">local · ocr · gpu</span><div class="caps">Modern OCR + layout detection</div></div>
+      <div class="engine"><span class="name">Nougat</span> <span class="type">local · gpu</span><div class="caps">Academic PDFs → LaTeX-aware markdown</div></div>
+      <div class="engine"><span class="name">Chandra</span> <span class="type">local · gpu</span><div class="caps">VLM-based OCR for hard scans</div></div>
+      <div class="engine"><span class="name">Mistral OCR</span> <span class="type">cloud</span><div class="caps">LLM-grade OCR API</div></div>
+      <div class="engine"><span class="name">LlamaParse</span> <span class="type">cloud</span><div class="caps">Managed parsing for RAG</div></div>
+      <div class="engine"><span class="name">Azure Doc Intelligence</span> <span class="type">cloud</span><div class="caps">Forms, invoices, prebuilt models</div></div>
+      <div class="engine"><span class="name">Google Document AI</span> <span class="type">cloud</span><div class="caps">Enterprise OCR + entity extraction</div></div>
+      <div class="engine"><span class="name">AWS Textract</span> <span class="type">cloud</span><div class="caps">Tables and forms at scale</div></div>
+      <div class="engine"><span class="name">OpenDataLoader</span> <span class="type">local · java</span><div class="caps">Open-source PDF structure extraction</div></div>
+      <div class="engine"><span class="name">Firecrawl</span> <span class="type">cloud</span><div class="caps">Web pages → markdown</div></div>
+      <div class="engine"><span class="name">Zerox · LiteParse · …</span> <span class="type">more</span><div class="caps">See <code>docfold engines</code> for the full list</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="choose">
+  <div class="wrap">
+    <h2>How to choose</h2>
+    <p class="lead">Or skip the decision entirely — call <code>router.process(file)</code> and let extension-aware routing pick.</p>
+    <ul class="choose">
+      <li><span class="sit">Born-digital PDF (has a text layer)</span><span class="rec"><strong>PyMuPDF</strong> — sub-second, zero GPU</span></li>
+      <li><span class="sit">Complex layout, tables, reading order</span><span class="rec"><strong>Docling</strong> or <strong>Marker</strong></span></li>
+      <li><span class="sit">Scanned PDF or photo of a document</span><span class="rec"><strong>Tesseract</strong> (free) → <strong>Surya</strong> / <strong>Mistral OCR</strong> (better)</span></li>
+      <li><span class="sit">Office files (DOCX, XLSX, PPTX)</span><span class="rec"><strong>MarkItDown</strong> or <strong>Unstructured</strong></span></li>
+      <li><span class="sit">Scientific papers with formulas</span><span class="rec"><strong>MinerU</strong> or <strong>Nougat</strong></span></li>
+      <li><span class="sit">Invoices and forms with key-value fields</span><span class="rec"><strong>Azure Doc Intelligence</strong> / <strong>AWS Textract</strong></span></li>
+      <li><span class="sit">Not sure which engine is best for your corpus</span><span class="rec"><strong>docfold evaluate</strong> — benchmark them on your own files</span></li>
+      <li><span class="sit">Need an MCP server for AI agents</span><span class="rec"><strong>docfold-mcp</strong> — built-in; register with <code>docfold install claude</code></span></li>
+    </ul>
+  </div>
+</section>
+
+<section id="quickstart">
+  <div class="wrap">
+    <h2>Quickstart</h2>
+    <p class="lead">Install one extra per engine, or <code>docfold[all]</code> for everything.</p>
+<pre><span class="k">import</span> asyncio
+<span class="k">from</span> docfold <span class="k">import</span> EngineRouter, OutputFormat
+<span class="k">from</span> docfold.engines.pymupdf_engine <span class="k">import</span> PyMuPDFEngine
+<span class="k">from</span> docfold.engines.docling_engine <span class="k">import</span> DoclingEngine
+
+<span class="k">async def</span> main():
+    router = EngineRouter([PyMuPDFEngine(), DoclingEngine()])
+
+    <span class="c"># Auto-routed by extension; falls back if an engine fails</span>
+    result = <span class="k">await</span> router.process(<span class="s">"report.pdf"</span>)
+    print(result.content)         <span class="c"># LLM-ready markdown</span>
+    print(result.engine_name)     <span class="c"># which engine actually parsed it</span>
+
+    <span class="c"># Force an engine, get JSON with tables and bounding boxes</span>
+    result = <span class="k">await</span> router.process(
+        <span class="s">"invoice.pdf"</span>,
+        output_format=OutputFormat.JSON,
+        engine_hint=<span class="s">"docling"</span>,
+    )
+
+asyncio.run(main())</pre>
+
+<pre><span class="c"># CLI</span>
+<span class="k">$</span> docfold convert report.pdf                 <span class="c"># auto-routed → markdown</span>
+<span class="k">$</span> docfold convert scan.pdf -e tesseract -f json
+<span class="k">$</span> docfold compare report.pdf -e pymupdf,docling  <span class="c"># side-by-side quality check</span>
+<span class="k">$</span> docfold engines
+<span class="k">$</span> docfold doctor            <span class="c"># health check: engines, MCP extra</span>
+<span class="k">$</span> docfold update --check    <span class="c"># self-update via PyPI</span></pre>
+  </div>
+</section>
+
+<section id="ecosystem">
+  <div class="wrap">
+    <h2>Built by &amp; ecosystem</h2>
+    <p class="lead">Docfold is built and maintained by <a href="https://www.linkedin.com/in/michael-sadofyev/">Mike Sadofyev</a> (CEO, <a href="https://datatera.ai">Datatera.ai</a>) — the document engine behind Datatera — alongside a small ecosystem of AI-data tooling. Connect on <a href="https://www.linkedin.com/in/michael-sadofyev/">LinkedIn</a>, <a href="https://x.com/MikeSadofyev">X</a>, or <a href="https://github.com/Mihailorama">GitHub</a>.</p>
+    <div class="engines">
+      <div class="engine"><span class="name">Datatera.ai</span> <span class="type">platform</span><div class="caps"><a href="https://datatera.ai">AI-powered data transformation &amp; document processing</a></div></div>
+      <div class="engine"><span class="name">Scrapefold</span> <span class="type">open source · sibling</span><div class="caps"><a href="https://scrapefold.com">Turn any URL into clean markdown</a></div></div>
+      <div class="engine"><span class="name">Orquesta AI</span> <span class="type">platform</span><div class="caps"><a href="https://orquestaai.com">AI orchestration &amp; agent management</a></div></div>
+      <div class="engine"><span class="name">AI Agent Labs</span> <span class="type">services</span><div class="caps"><a href="https://aiagentlbs.com">AI agent services &amp; location intelligence</a></div></div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <a class="btn btn-primary" href="https://github.com/mihailorama/docfold">⭐ Star Docfold on GitHub</a>
+    <div class="eco">
+      <a href="https://github.com/mihailorama/docfold">GitHub</a>
+      <a href="https://pypi.org/project/docfold/">PyPI</a>
+      <a href="https://github.com/mihailorama/docfold/tree/main/docs">Docs</a>
+      <a href="https://scrapefold.com">Scrapefold</a>
+      <a href="https://datatera.ai">Datatera.ai</a>
+      <a href="https://orquestaai.com">Orquesta AI</a>
+      <a href="https://aiagentlbs.com">AI Agent Labs</a>
+    </div>
+    <div class="connect">
+      Built by <strong>Mike Sadofyev</strong> ·
+      <a href="https://www.linkedin.com/in/michael-sadofyev/">LinkedIn</a> ·
+      <a href="https://x.com/MikeSadofyev">X</a> ·
+      <a href="https://github.com/Mihailorama">GitHub</a>
+    </div>
+    <div class="byline">Open source · MIT · the document engine behind <a href="https://datatera.ai">Datatera.ai</a></div>
+  </div>
+</footer>
+
+<script>
+  // Click-to-copy (progressive enhancement; page works without JS).
+  (function () {
+    if (!navigator.clipboard) return;
+
+    function wire(el, label, text) {
+      if (!el) return;
+      el.addEventListener('click', function () {
+        navigator.clipboard.writeText(text).then(function () {
+          if (!label) return;
+          label.textContent = 'copied ✓';
+          label.classList.add('ok');
+          setTimeout(function () {
+            label.textContent = 'copy';
+            label.classList.remove('ok');
+          }, 1600);
+        });
+      });
+    }
+
+    wire(document.getElementById('pip'), document.getElementById('copyLabel'),
+         'pip install docfold');
+
+    var agent = document.getElementById('agentPrompt');
+    wire(agent, document.getElementById('agentPromptLabel'),
+         agent ? agent.getAttribute('data-copy') : '');
+
+    var cfg = document.getElementById('mcpConfig');
+    wire(cfg, document.getElementById('mcpConfigLabel'),
+         cfg ? cfg.getAttribute('data-copy') : '');
+  })();
+</script>
+
+</body>
+</html>

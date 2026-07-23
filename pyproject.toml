@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "docfold"
-version = "0.6.13"
+dynamic = ["version"]
 description = "Turn any document into structured data. Unified interface for document structuring engines with built-in evaluation."
 readme = "README.md"
 license = "MIT"
@@ -120,6 +120,9 @@ firecrawl = [
 markitdown = [
     "markitdown[all]>=0.0.1",
 ]
+mcp = [
+    "mcp>=1.2",
+]
 evaluation = [
     "jiwer>=3.0",          # WER/CER computation
     "numpy>=1.23",
@@ -128,7 +131,7 @@ evaluation = [
     "psutil>=5.9",         # Memory measurement
 ]
 all = [
-    "docfold[docling,mineru,marker,pymupdf,paddleocr,tesseract,easyocr,unstructured,llamaparse,liteparse,opendataloader,mistral-ocr,textract,google-docai,azure-docint,nougat,chandra,surya,unlimited-ocr,firecrawl,markitdown,evaluation]",
+    "docfold[docling,mineru,marker,pymupdf,paddleocr,tesseract,easyocr,unstructured,llamaparse,liteparse,opendataloader,mistral-ocr,textract,google-docai,azure-docint,nougat,chandra,surya,unlimited-ocr,firecrawl,markitdown,mcp,evaluation]",
     # Note: zerox excluded from [all] — py-zerox requires Python 3.11+
     # Install separately: pip install docfold[zerox]
 ]
@@ -154,9 +157,13 @@ Changelog = "https://github.com/mihailorama/docfold/blob/main/CHANGELOG.md"
 
 [project.scripts]
 docfold = "docfold.cli:main"
+docfold-mcp = "docfold.mcp_server:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/docfold"]
+
+[tool.hatch.version]
+path = "src/docfold/__init__.py"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

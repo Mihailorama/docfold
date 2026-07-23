@@ -7,7 +7,7 @@
 
 ## Setup
 
-- [Agent setup instructions](https://mihailorama.github.io/docfold/install.md):
+- [Agent setup instructions](https://docfold.xyz/install.md):
   install, verify the CLI, and register the MCP server in one command
   (`docfold install claude|codex|cursor|vscode|generic`).
 

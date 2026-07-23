@@ -183,7 +183,7 @@ Exposes `parse_document`, `extract_tables`, `list_engines`, `classify_document` 
 **Setting up with an AI agent?** Just tell it:
 
 ```
-fetch https://mihailorama.github.io/docfold/install.md
+fetch https://docfold.xyz/install.md
 ```
 
 — a complete, agent-readable setup instruction (install → verify CLI → register MCP). It's idempotent: safe to run on a machine where docfold is already set up.

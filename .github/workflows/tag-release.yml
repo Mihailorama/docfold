@@ -1,0 +1,39 @@
+name: Tag release
+
+# Creates an annotated release tag from the Actions UI/API when direct tag
+# pushes are unavailable. NOTE: the tag is pushed with GITHUB_TOKEN, which does
+# NOT trigger the ci.yml tag build — dispatch ci.yml on the new tag afterwards:
+#   gh workflow run ci.yml --ref vX.Y.Z
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to create (e.g. v0.7.0), pointing at the dispatched ref'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Verify tag matches package version
+        run: |
+          ver=$(python3 -c "import re, pathlib; print(re.search(r'__version__ = \"([^\"]+)\"', pathlib.Path('src/docfold/__init__.py').read_text()).group(1))")
+          if [ "v$ver" != "${{ inputs.tag }}" ]; then
+            echo "tag '${{ inputs.tag }}' does not match package version '$ver'"
+            exit 1
+          fi
+
+      - name: Create and push tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "${{ inputs.tag }}" -m "docfold ${{ inputs.tag }}"
+          git push origin "refs/tags/${{ inputs.tag }}"

@@ -7,7 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-07-23
+
 ### Added
+
+- **MCP server (`docfold-mcp`)** — stdio server on FastMCP (official `mcp` SDK, new optional extra `[mcp]`) with four tools: `parse_document` (file or URL → structured markdown/html/json/text), `extract_tables`, `list_engines`, `classify_document`. Tool definitions are token-budget-tested (< 1000 tokens estimated). Failures come back structured (`{"error", "failures"}`), never garbage posing as content. Install: `pip install "docfold[mcp]"`.
+- **`docfold install <client>`** — one-click MCP registration for `claude` / `codex` / `cursor` / `vscode` / `generic`. Invokes the client's own CLI (`claude mcp add …`) when available; for Cursor merges `~/.cursor/mcp.json` in place, preserving existing servers; `generic` prints the standard `mcpServers` JSON.
+- **`docfold doctor [--json]`** — health check: version, Python, MCP extra presence, per-engine availability.
+- **`docfold update [--check] [--extras …] [--json]`** — self-update via PyPI using the running interpreter's pip (stdlib urllib; core stays dependency-free).
+- **`docfold --version`**.
+- **Agent onboarding docs + landing** — `docs/install.md` (idempotent agent setup instruction), `docs/llms.txt`, and a GitHub Pages landing (`docs/index.html`) with one-click agent install CTA and a 1200×630 PNG social card.
+- **Tag release workflow** — `.github/workflows/tag-release.yml` creates release tags via `workflow_dispatch` (verifies the tag matches `__version__`); CI must then be dispatched manually on the tag.
+
+### Changed
+
+- **Single-source version** — `pyproject.toml` now reads the version from `src/docfold/__init__.py` via hatch dynamic versioning (fixes the 0.6.13 vs 0.6.0 drift between package metadata and `__version__`).
+
+### Added (pre-0.7.0, previously unreleased)
 
 - **MarkItDown engine adapter** — wraps Microsoft's [`markitdown`](https://github.com/microsoft/markitdown) pure-Python library that converts Office files, PDFs, HTML, images, CSV/JSON/XML, ePub, audio, and ZIP archives into LLM-friendly Markdown. Added to the `benchmark.py` harness alongside the other local engines. Install: `pip install docfold[markitdown]`.
 - **Non-PDF benchmark fixtures** — `benchmark.py` now also generates synthetic DOCX (built with stdlib `zipfile` + minimal Office Open XML, no extra deps), HTML, and CSV documents, and filters engines per-doc by `supported_extensions` so PyMuPDF / OCR engines no longer log spurious errors on Office or web fixtures.

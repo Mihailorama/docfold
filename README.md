@@ -6,7 +6,7 @@
 [![CI](https://github.com/mihailorama/docfold/actions/workflows/ci.yml/badge.svg)](https://github.com/mihailorama/docfold/actions/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/tests-175%20passed-brightgreen.svg)](#)
 
-**Turn any document into structured data.** Unified Python toolkit for document structuring — one interface, 16 engines, built-in benchmarks.
+**Turn any document into structured data.** Unified Python toolkit for document structuring — one interface, 20+ engines, built-in benchmarks, CLI, and an MCP server for AI agents.
 
 Docfold is the open-source extraction engine from [Datatera.ai](https://datatera.ai) — extracted from our commercial enterprise AI data platform and battle-tested in production with enterprise clients across finance, insurance, and mining.
 
@@ -144,7 +144,57 @@ docfold compare invoice.pdf
 
 # Run evaluation benchmark
 docfold evaluate tests/evaluation/dataset/ --output report.json
+
+# Health check: version, MCP extra, per-engine availability
+docfold doctor
+docfold doctor --json
+
+# Register the MCP server in an AI client (see next section)
+docfold install claude
+
+# Self-update (or just check): pip upgrade via the running interpreter
+docfold update --check
+docfold update --extras mcp,docling
 ```
+
+## MCP Server (for Claude Code, Cursor, agents)
+
+One-click install:
+
+```bash
+pip install "docfold[mcp]"
+docfold install claude    # Claude Code
+docfold install codex     # Codex CLI
+docfold install cursor    # Cursor
+docfold install vscode    # VS Code
+docfold install generic   # print JSON config for any other client
+```
+
+Or drop into any client's MCP config manually:
+
+```json
+{ "mcpServers": { "docfold": { "command": "docfold-mcp", "args": [] } } }
+```
+
+Exposes `parse_document`, `extract_tables`, `list_engines`, `classify_document` tools over stdio — all 4 tool definitions + instructions cost your agent **under 1000 tokens** (budget-tested). Failures come back structured (`{"error", "failures"}`), never garbage posing as content.
+
+**Setting up with an AI agent?** Just tell it:
+
+```
+fetch https://mihailorama.github.io/docfold/install.md
+```
+
+— a complete, agent-readable setup instruction (install → verify CLI → register MCP). It's idempotent: safe to run on a machine where docfold is already set up.
+
+## How is this different from Docling / Unstructured / MarkItDown?
+
+They're not competitors — **they're engines inside docfold.** Docling, Unstructured, MarkItDown, PyMuPDF, Marker, Tesseract, and 15+ others are all wrapped behind one `DocumentEngine`/`EngineResult` interface. docfold's job is the layer above any single parser:
+
+- **Routing** — classify the file (born-digital PDF? scan? office doc?) and pick the right engine per extension, falling back down the priority chain when an engine fails on a file.
+- **Evaluation** — built-in CER/WER/Table-F1 benchmarks so you pick the best engine for *your* corpus, not the one with the best marketing.
+- **One interface** — switching parsers is a one-string change, not a pipeline rewrite. The MCP server stays deliberately small: 4 tight tools, no bloat in your agent's context.
+
+If you love one parser, pin it: `engine_hint="docling"`. If you don't want to choose, don't: `router.process(file)` picks for you.
 
 ## Batch Processing
 

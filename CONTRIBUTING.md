@@ -55,6 +55,26 @@ Ground truth annotations are valuable. To contribute:
 2. Create a `<filename>.ground_truth.json` alongside it following the schema in `docs/evaluation.md`
 3. Keep files small (< 1 MB per document)
 
+## Release Checklist
+
+1. Bump `__version__` in `src/docfold/__init__.py` — the single source of
+   truth; `pyproject.toml` reads it via hatch's dynamic version.
+2. Move the `## [Unreleased]` entries in `CHANGELOG.md` under a new
+   `## [X.Y.Z] - YYYY-MM-DD` heading.
+3. Run the full gate locally: `ruff check src/ tests/`, `mypy src/`,
+   `pytest tests/` — all clean. Re-run `pip install -e .` first so package
+   metadata matches `__version__`.
+4. Merge to `main`, then tag the release commit `vX.Y.Z` and push the tag —
+   the `v*` tag build in `ci.yml` publishes to PyPI via trusted publishing.
+   - If you cannot push tags directly (e.g. from an agent environment),
+     dispatch the **Tag release** workflow
+     (`.github/workflows/tag-release.yml`) with `tag: vX.Y.Z`; it verifies
+     the tag matches `__version__` and pushes it. A tag pushed by that
+     workflow's `GITHUB_TOKEN` does **not** trigger CI automatically —
+     follow up with `gh workflow run ci.yml --ref vX.Y.Z`.
+5. Verify: PyPI shows the new version and the GitHub Pages landing
+   (served from `docs/` on `main`) redeployed.
+
 ## Pull Request Process
 
 1. Fork the repo and create a feature branch from `main`

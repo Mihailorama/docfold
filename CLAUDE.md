@@ -1,3 +1,5 @@
+@AGENTS.md
+
 # docfold
 
 Open-source Python document structuring toolkit. Published to PyPI as `docfold`.

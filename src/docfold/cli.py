@@ -242,6 +242,31 @@ def _build_router():
         pass
 
     try:
+        from docfold.engines.minicpm_ocr_engine import MiniCPMOCREngine
+        router.register(MiniCPMOCREngine())
+    except Exception:
+        pass
+
+    try:
+        from docfold.engines.glm_ocr_engine import GLMOCREngine
+        router.register(GLMOCREngine())
+    except Exception:
+        pass
+
+    try:
+        from docfold.engines.paddleocr_vl_engine import PaddleOCRVLEngine
+        router.register(PaddleOCRVLEngine())
+    except Exception:
+        pass
+
+    try:
+        from docfold.engines.vlm_ocr_engine import PRESETS, VLMOCREngine
+        for preset in PRESETS:
+            router.register(VLMOCREngine(preset))
+    except Exception:
+        pass
+
+    try:
         from docfold.engines.firecrawl_engine import FirecrawlEngine
         router.register(FirecrawlEngine())
     except Exception:

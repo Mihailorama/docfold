@@ -14,6 +14,12 @@ pytest tests/                 # Run all tests
 pytest tests/ -m "not slow"   # Skip slow tests
 ```
 
+## Task Tracker
+
+Plane project `DOCFOLD` (`1bd150f9-01a0-4417-a06b-e3d08e4959ac`, workspace `sg`,
+https://tasks.aiagentlbs.com) is the source of truth for bugs, tech debt and follow-ups
+(owner request 2026-10-31). `docs/tasks/` keeps the per-feature proposals and links the issues.
+
 ## Key Files
 
 | File/Dir | Purpose |

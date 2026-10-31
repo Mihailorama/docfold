@@ -1,10 +1,14 @@
-"""MinerU 2.x engine adapter.
+"""MinerU engine adapter.
 
 Install: ``pip install docfold[mineru]``
 
 Built on `MinerU <https://github.com/opendatalab/MinerU>`_ (the ``mineru``
-package, formerly ``magic-pdf``). Uses the supported programmatic entry point
-:func:`mineru.cli.common.do_parse`.
+package, formerly ``magic-pdf``).
+
+- MinerU 4.x: :func:`mineru.parse` with a quality ``tier``; its VLM model is
+  MinerU2.5-Pro.  Point ``server_url`` at a ``mineru-openai-server`` / vLLM
+  endpoint to run the VLM remotely.
+- MinerU 2.x/3.x: :func:`mineru.cli.common.do_parse` with a ``backend``.
 
 Note: First run downloads model weights (~1-3 GB).
 License: AGPL-3.0 — see https://github.com/opendatalab/MinerU
@@ -41,8 +45,26 @@ def _ensure_imports() -> None:
     read_fn = _read_fn
 
 
+def _load_mineru4() -> tuple[Any, Any] | None:
+    """Return ``(mineru.parse, VlmConfig)`` on MinerU 4.x, else ``None``."""
+    try:
+        from mineru import parse
+        from mineru.config import VlmConfig
+    except (ImportError, AttributeError):
+        return None
+    return parse, VlmConfig
+
+
+def _page_range(start: int | None, end: int | None) -> str:
+    """0-based inclusive ``start``/``end`` → MinerU 4 1-based ``page_range``."""
+    if not start and end is None:
+        return ""
+    first = (start or 0) + 1
+    return f"{first}-{end + 1}" if end is not None else f"{first}-r1"
+
+
 class MinerUEngine(DocumentEngine):
-    """Adapter for MinerU 2.x, the end-to-end PDF structuring tool.
+    """Adapter for MinerU, the end-to-end PDF structuring tool.
 
     See https://github.com/opendatalab/MinerU
     """
@@ -53,11 +75,17 @@ class MinerUEngine(DocumentEngine):
         gpu: bool = False,
         backend: str = "pipeline",
         parse_method: str = "auto",
+        tier: str = "standard",
+        server_url: str | None = None,
+        vlm_model: str | None = None,
     ) -> None:
         self._config_path = config_path
         self._gpu = gpu
-        self._backend = backend
+        self._backend = backend  # MinerU 2.x/3.x only
         self._parse_method = parse_method
+        self._tier = tier  # MinerU 4.x only: flash | basic | standard | advanced
+        self._server_url = server_url
+        self._vlm_model = vlm_model
 
     @property
     def name(self) -> str:
@@ -109,6 +137,9 @@ class MinerUEngine(DocumentEngine):
     def _run_mineru(
         self, file_path: str, output_format: OutputFormat, kwargs: dict[str, Any],
     ) -> tuple[str, dict]:
+        mineru4 = _load_mineru4()
+        if mineru4 is not None:
+            return self._run_mineru4(mineru4, file_path, output_format, kwargs)
         _ensure_imports()
 
         backend = kwargs.get("backend", self._backend)
@@ -162,6 +193,31 @@ class MinerUEngine(DocumentEngine):
         }
 
         return content, metadata
+
+    def _run_mineru4(
+        self, mineru4: tuple[Any, Any], file_path: str,
+        output_format: OutputFormat, kwargs: dict[str, Any],
+    ) -> tuple[str, dict]:
+        import json
+
+        parse, vlm_config_cls = mineru4
+        tier = kwargs.get("tier", self._tier)
+        parse_method = kwargs.get("parse_method", self._parse_method)
+        vlm_config = None
+        if self._server_url:
+            vlm_config = vlm_config_cls(server_url=self._server_url, model=self._vlm_model or "")
+        result = parse(
+            file_path,
+            tier=tier,
+            ocr_mode=parse_method,
+            page_range=_page_range(kwargs.get("start_page"), kwargs.get("end_page")),
+            vlm_config=vlm_config,
+        )
+        if output_format == OutputFormat.JSON:
+            content = json.dumps(result.structured_content(), ensure_ascii=False)
+        else:
+            content = result.markdown()
+        return content, {"tier": tier, "parse_method": parse_method, "pages": len(result.pages)}
 
     @staticmethod
     def _output_subdir(backend: str, parse_method: str) -> str:

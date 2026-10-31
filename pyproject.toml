@@ -114,6 +114,17 @@ unlimited-ocr = [
     "einops>=0.8",
     "PyMuPDF>=1.23",  # render PDF pages to images
 ]
+# Layout-pipeline OCR VLMs (model served separately with vLLM/SGLang).
+# Kept out of [all]: their pins conflict (transformers 5.x vs 4.x, paddle stacks).
+minicpm-ocr = [
+    "minicpm-ocr[all]>=1.0",  # plus paddlepaddle for PP-DocLayoutV3
+]
+glm-ocr = [
+    "glmocr[selfhosted]>=0.1.5",
+]
+paddleocr-vl = [
+    "paddleocr[doc-parser]>=3.7",  # plus paddlepaddle
+]
 firecrawl = [
     "firecrawl-py>=1.0",
 ]

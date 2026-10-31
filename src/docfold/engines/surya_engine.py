@@ -6,11 +6,18 @@ Surya provides text detection, recognition, layout analysis, and table
 structure extraction with support for 90+ languages.
 
 No API key needed; runs entirely locally.
+
+Surya 2.x (surya-ocr >= 0.20) runs OCR through one VLM (surya-ocr-2.x) that
+it serves itself with vLLM or llama.cpp; set ``SURYA_INFERENCE_URL`` to reuse
+a running server.  Older Surya releases use the detection + recognition
+predictors.
 """
 
 from __future__ import annotations
 
+import html
 import logging
+import re
 import time
 from pathlib import Path
 from typing import Any
@@ -110,7 +117,38 @@ class SuryaEngine(DocumentEngine):
     def _do_process(
         self, file_path: str, output_format: OutputFormat
     ) -> tuple[str, int, dict]:
-        # Surya v0.17+ predictor-based API
+        try:
+            from surya.inference import SuryaInferenceManager
+        except ImportError:
+            return self._do_process_legacy(file_path, output_format)
+        from surya.recognition import RecognitionPredictor
+
+        images = self._load_images(file_path)
+        predictions = RecognitionPredictor(SuryaInferenceManager())(images)
+        pages_data = [
+            {
+                "page": i + 1,
+                "lines": [
+                    {
+                        "text": _html_to_text(b.html),
+                        "html": b.html,
+                        "label": b.label,
+                        "polygon": b.polygon,
+                        "confidence": b.confidence,
+                    }
+                    for b in sorted(page.blocks, key=lambda b: b.reading_order)
+                    if b.html and not b.skipped
+                ],
+            }
+            for i, page in enumerate(predictions)
+        ]
+        content = self._format_output(pages_data, output_format)
+        return content, len(images), {"langs": self._langs, "surya_api": "v2"}
+
+    def _do_process_legacy(
+        self, file_path: str, output_format: OutputFormat
+    ) -> tuple[str, int, dict]:
+        # Surya v0.17-0.19 predictor-based API
         from surya.detection import DetectionPredictor
         from surya.foundation import FoundationPredictor
         from surya.recognition import RecognitionPredictor
@@ -176,3 +214,8 @@ class SuryaEngine(DocumentEngine):
                 page_lines.append(line["text"])
             md_parts.append("\n".join(page_lines))
         return "\n\n".join(md_parts)
+
+
+def _html_to_text(fragment: str) -> str:
+    """Plain text of a Surya block (its OCR output is an HTML fragment)."""
+    return " ".join(html.unescape(re.sub(r"<[^>]+>", " ", fragment)).split())

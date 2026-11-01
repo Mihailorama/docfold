@@ -10,10 +10,14 @@ high-compression encoder, it can transcribe dozens of pages of a document in a
 single forward pass under a 32K context window — the "one-shot long-horizon
 parsing" capability that gives the project its name.
 
-The model is loaded from HuggingFace (``baidu/Unlimited-OCR``) via
-``trust_remote_code=True``; there is no separate pip package to import.
+The model is loaded from HuggingFace via ``trust_remote_code=True``; there is
+no separate pip package to import.  The default is **Unlimited-OCR-2**
+(``baidu/Unlimited-OCR-2``): single images use ``model.infer`` (dynamic
+tiling), multi-page documents use ``model.infer_multi`` so all pages are
+parsed in one request with cross-page context.  Pass
+``model="baidu/Unlimited-OCR"`` for v1.
 
-Two inference modes are supported, matching upstream:
+v1 supports two inference modes, matching upstream:
 
 - **gundam** (default) — ``base_size=1024, image_size=640, crop_mode=True``;
   dynamic cropping, best for single high-resolution images.
@@ -62,7 +66,7 @@ class UnlimitedOCREngine(DocumentEngine):
     def __init__(
         self,
         mode: str = "gundam",
-        model: str = "baidu/Unlimited-OCR",
+        model: str = "baidu/Unlimited-OCR-2",
         prompt: str = "<image>document parsing.",
         max_length: int = 32768,
         torch_dtype: str = "bfloat16",
@@ -177,30 +181,51 @@ class UnlimitedOCREngine(DocumentEngine):
 
         image_paths, cleanup_dir = self._to_image_paths(file_path)
         try:
-            pages_text: list[str] = []
             # ``output_path`` is required by infer for any side-effect output;
             # use a throwaway dir and rely on the returned text instead.
             with tempfile.TemporaryDirectory() as out_dir:
-                for img_path in image_paths:
-                    text = model.infer(
-                        tokenizer,
-                        prompt=self._prompt,
-                        image_file=img_path,
-                        output_path=out_dir,
-                        base_size=base_size,
-                        image_size=image_size,
-                        crop_mode=crop_mode,
-                        max_length=self._max_length,
-                        save_results=False,
-                    )
-                    pages_text.append((text or "").strip())
+                if self._is_v2():
+                    pages_text = self._infer_v2(model, tokenizer, image_paths, out_dir)
+                else:
+                    pages_text = [
+                        (model.infer(
+                            tokenizer,
+                            prompt=self._prompt,
+                            image_file=img_path,
+                            output_path=out_dir,
+                            base_size=base_size,
+                            image_size=image_size,
+                            crop_mode=crop_mode,
+                            max_length=self._max_length,
+                            save_results=False,
+                        ) or "").strip()
+                        for img_path in image_paths
+                    ]
         finally:
             if cleanup_dir is not None:
                 cleanup_dir.cleanup()
 
-        page_count = len(pages_text)
+        page_count = len(image_paths)
         content = self._format_output(pages_text, output_format)
         return content, page_count
+
+    def _is_v2(self) -> bool:
+        return "unlimited-ocr-2" in self._model.lower()
+
+    @staticmethod
+    def _infer_v2(model: Any, tokenizer: Any, image_paths: list[str], out_dir: str) -> list[str]:
+        """Unlimited-OCR-2 builds its own prompt; one request for all pages."""
+        if len(image_paths) == 1:
+            text = model.infer(
+                tokenizer, image_file=image_paths[0], output_path=out_dir, save_results=False,
+            )
+            return [(text or "").strip()]
+        text, _num_tokens = model.infer_multi(
+            tokenizer, image_files=image_paths, output_path=out_dir, save_results=False,
+        )
+        # The output carries one <PAGE> marker per input page.
+        pages = [t.strip() for t in (text or "").split("<PAGE>")[1:]]
+        return pages if len(pages) == len(image_paths) else [(text or "").strip()]
 
     def _to_image_paths(self, file_path: str) -> tuple[list[str], Any]:
         """Return image file paths for the input plus an optional temp-dir handle.

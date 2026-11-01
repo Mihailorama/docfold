@@ -111,7 +111,49 @@ for name, res in results.items():
 | [**Nougat**](https://github.com/facebookresearch/nougat) | Local | MIT (code) | PDF | Recommended | `pip install docfold[nougat]` |
 | [**Surya**](https://github.com/VikParuchuri/surya) | Local | GPL-3.0 | PDF, images | Optional | `pip install docfold[surya]` |
 | [**Unlimited-OCR**](https://github.com/baidu/Unlimited-OCR) | Local/VLM | MIT | PDF, images | Required | `pip install docfold[unlimited-ocr]` |
+| **OCR VLMs via vLLM/SGLang** — `xiaomi_ocr`, `hunyuan_ocr`, `lighton_ocr`, `ovis_ocr2`, `dots_ocr` | Self-hosted VLM | Per model | PDF, images | On the server | none (`[pymupdf]` for PDFs) |
 | [**MarkItDown**](https://github.com/microsoft/markitdown) | Local | MIT | PDF, Office, HTML, images, CSV/JSON/XML, ePub, audio, ZIP | No | `pip install docfold[markitdown]` |
+
+### Open OCR VLMs served over an OpenAI-compatible API
+
+Five recent open OCR models are built in as presets of one engine
+(`docfold/engines/vlm_ocr_engine.py`). Serve the model with vLLM or SGLang
+using the flags from its model card, then set its URL. The preset stays
+unavailable until you do:
+
+```bash
+vllm serve lightonai/LightOnOCR-3-1B --limit-mm-per-prompt '{"image": 1}'
+export DOCFOLD_LIGHTON_OCR_URL=http://localhost:8000/v1
+docfold convert scan.pdf --engine lighton_ocr
+```
+
+| Preset | Model | License | Notes |
+|--------|-------|---------|-------|
+| `xiaomi_ocr` | [Xiaomi-OCR-0](https://huggingface.co/xiaomi-research/Xiaomi-OCR-0) | Apache-2.0 | OTSL tables are converted to HTML |
+| `hunyuan_ocr` | [HunyuanOCR-1.5](https://huggingface.co/tencent/HunyuanOCR) | Tencent Hunyuan Community | |
+| `lighton_ocr` | [LightOnOCR-3-1B](https://huggingface.co/lightonai/LightOnOCR-3-1B) | Apache-2.0 | Image-only prompt |
+| `ovis_ocr2` | [OvisOCR2](https://huggingface.co/ATH-MaaS/OvisOCR2) | Apache-2.0 | Card documents offline vLLM only |
+| `dots_ocr` | [dots.ocr](https://huggingface.co/dots-studio/dots.ocr) | MIT | Needs vLLM model registration; layout JSON is flattened to Markdown |
+
+Optional `DOCFOLD_<PRESET>_MODEL` (if you used `--served-model-name`) and
+`DOCFOLD_<PRESET>_API_KEY`. Chandra OCR 2 already runs over vLLM through the
+`chandra` engine.
+
+Models that read regions rather than whole pages run through their own
+layout pipeline, with the model on the same kind of server:
+
+| Engine | Model | Install | Server URL env |
+|--------|-------|---------|----------------|
+| `minicpm_ocr` | [MiniCPM-OCR 1.0](https://huggingface.co/openbmb/MiniCPM-OCR-1.0) (Apache-2.0) | `pip install docfold[minicpm-ocr]` + paddlepaddle | `DOCFOLD_MINICPM_OCR_URL` |
+| `glm_ocr` | [GLM-OCR](https://huggingface.co/zai-org/GLM-OCR) (MIT) | `pip install docfold[glm-ocr]` | `DOCFOLD_GLM_OCR_URL` |
+| `paddleocr_vl` | [PaddleOCR-VL-1.6](https://huggingface.co/PaddlePaddle/PaddleOCR-VL-1.6) (Apache-2.0) | `pip install docfold[paddleocr-vl]` + paddlepaddle | `DOCFOLD_PADDLEOCR_VL_URL` |
+
+For `minicpm_ocr` behind llama-server or Ollama, also set
+`DOCFOLD_MINICPM_OCR_BACKEND=llamacpp` (or `ollama`); the SDK default is vLLM.
+
+`mineru` runs MinerU2.5-Pro on MinerU 4.x (`MinerUEngine(tier=..., server_url=...)`),
+`surya` runs Surya OCR 2.5 on surya-ocr 0.20+ (`SURYA_INFERENCE_URL` reuses a
+server), and `unlimited_ocr` defaults to Unlimited-OCR-2.
 
 > **Adding your own engine?** Implement the `DocumentEngine` interface — see [Adding a Custom Engine](#adding-a-custom-engine) below.
 

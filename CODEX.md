@@ -14,5 +14,5 @@ pytest tests/
 - Never skip tests. Never merge without green tests
 - Preserve backward compatibility for public API
 - Test across all engines when modifying shared logic
-- Never push to GitHub
+- Deliver through a GitHub pull request; never push directly to main or a v* tag
 - See docs/conventions/golden-rules.md for full rules

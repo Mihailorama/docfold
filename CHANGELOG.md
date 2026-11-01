@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **OCR-VLM presets over an OpenAI-compatible API** (`vlm_ocr_engine.py`). One adapter sends each page image to `/v1/chat/completions` on a vLLM or SGLang server using the prompt and sampling settings from each model card. Presets: `xiaomi_ocr` (Xiaomi-OCR-0; OTSL tables become HTML), `hunyuan_ocr` (HunyuanOCR-1.5), `lighton_ocr` (LightOnOCR-3-1B), `ovis_ocr2` (OvisOCR2) and `dots_ocr` (dots.ocr; layout JSON becomes Markdown). Each preset is its own engine and is available once `DOCFOLD_<PRESET>_URL` is set. No new dependencies.
+- **`minicpm_ocr`, `glm_ocr`, `paddleocr_vl` engines** for OCR models that read layout regions: MiniCPM-OCR 1.0 (through the `minicpmvocr parse` SDK CLI), GLM-OCR (`glmocr` SDK, self-hosted mode) and PaddleOCR-VL-1.6 (`paddleocr.PaddleOCRVL` with a vLLM server). Each is available once `DOCFOLD_<ENGINE>_URL` is set (`minicpm_ocr` also takes `backend` / `DOCFOLD_MINICPM_OCR_BACKEND` for llama.cpp or Ollama). All new engines and presets were checked end to end on real GGUF weights. New extras: `[minicpm-ocr]`, `[glm-ocr]`, `[paddleocr-vl]` (not in `[all]`).
+- `MinerUEngine` gains `tier`, `server_url` and `vlm_model` for MinerU 4.x, whose VLM model is MinerU2.5-Pro.
+
+### Changed
+
+- `UnlimitedOCREngine` now defaults to `baidu/Unlimited-OCR-2`; multi-page documents go through `infer_multi` in one request. Pass `model="baidu/Unlimited-OCR"` for v1.
+
+### Fixed
+
+- `mineru` engine on MinerU 4.x: `process()` failed with `No module named 'mineru.cli.common'`. It now uses `mineru.parse`; MinerU 2.x/3.x keep the old path.
+- `surya` engine on surya-ocr 0.20+: `surya.foundation` was removed. It now uses Surya 2's `SuryaInferenceManager`; older releases keep the old path.
+
 ## [0.7.0] - 2026-07-23
 
 ### Added

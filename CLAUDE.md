@@ -32,7 +32,7 @@ https://tasks.aiagentlbs.com) is the source of truth for bugs, tech debt and fol
 ## Golden Rules (Summary)
 
 1. **Tests before implementation** - write failing tests first, then implement. See "Feature Development Workflow" below.
-2. Never push to GitHub.
+2. Deliver through a GitHub pull request; never push directly to `main` or a `v*` tag.
 3. Preserve backward compatibility for the public API.
 4. Test across all engines when modifying shared logic.
 

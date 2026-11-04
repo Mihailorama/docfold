@@ -173,9 +173,12 @@ class LiteParseEngine(DocumentEngine):
             pw = page_data.get("width")
             ph = page_data.get("height")
 
-            # LiteParse provides "textItems" with {text, x, y, width, height}
-            # and "boundingBoxes" with {x1, y1, x2, y2}
-            for idx, item in enumerate(page_data.get("textItems", [])):
+            # Text items are {text, x, y, width, height}. CLI 2.x emits
+            # "text_items"; older CLIs emitted "textItems".
+            items = page_data.get("text_items")
+            if items is None:
+                items = page_data.get("textItems", [])
+            for idx, item in enumerate(items):
                 x = item.get("x", 0)
                 y = item.get("y", 0)
                 w = item.get("width", 0)

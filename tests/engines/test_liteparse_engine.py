@@ -275,6 +275,43 @@ class TestLiteParseEngineProcess:
             assert bbox["page_height"] == 792
 
     @pytest.mark.asyncio
+    async def test_bounding_boxes_from_snake_case_text_items(self):
+        """LiteParse CLI 2.x (parseResultToCliJson) emits ``text_items``."""
+        from docfold.engines.liteparse_engine import LiteParseEngine
+
+        e = LiteParseEngine()
+
+        json_output = _make_liteparse_json([
+            {
+                "page": 2,
+                "width": 612,
+                "height": 792,
+                "text": "World",
+                "text_items": [
+                    {"text": "World", "x": 5.0, "y": 6.0, "width": 10.0, "height": 4.0}
+                ],
+            }
+        ])
+
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.communicate = AsyncMock(
+            return_value=(json_output.encode(), b"")
+        )
+
+        with patch("asyncio.create_subprocess_exec", new_callable=AsyncMock) as mock_exec:
+            mock_exec.return_value = mock_result
+
+            result = await e.process("test.pdf", output_format=OutputFormat.MARKDOWN)
+
+            assert result.bounding_boxes is not None
+            bbox = result.bounding_boxes[0]
+            assert bbox["bbox"] == [5.0, 6.0, 15.0, 10.0]
+            assert bbox["text"] == "World"
+            assert bbox["page"] == 2
+            assert bbox["id"] == "p2-i0"
+
+    @pytest.mark.asyncio
     async def test_extract_json_with_log_prefix(self):
         """LiteParse CLI may output log lines before JSON."""
         from docfold.engines.liteparse_engine import LiteParseEngine

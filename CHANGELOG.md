@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `mineru` engine on MinerU 4.x: `process()` failed with `No module named 'mineru.cli.common'`. It now uses `mineru.parse`; MinerU 2.x/3.x keep the old path.
 - `surya` engine on surya-ocr 0.20+: `surya.foundation` was removed. It now uses Surya 2's `SuryaInferenceManager`; older releases keep the old path.
+- `liteparse` engine returned no bounding boxes with the current LiteParse CLI (`@llamaindex/liteparse` 2.x), which emits per-page `text_items` instead of `textItems`. It now reads `text_items` and falls back to `textItems` for older CLIs.
 
 ## [0.7.0] - 2026-07-23
 

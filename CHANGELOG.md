@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-04
+
 ### Added
 
 - **OCR-VLM presets over an OpenAI-compatible API** (`vlm_ocr_engine.py`). One adapter sends each page image to `/v1/chat/completions` on a vLLM or SGLang server using the prompt and sampling settings from each model card. Presets: `xiaomi_ocr` (Xiaomi-OCR-0; OTSL tables become HTML), `hunyuan_ocr` (HunyuanOCR-1.5), `lighton_ocr` (LightOnOCR-3-1B), `ovis_ocr2` (OvisOCR2) and `dots_ocr` (dots.ocr; layout JSON becomes Markdown). Each preset is its own engine and is available once `DOCFOLD_<PRESET>_URL` is set. No new dependencies.

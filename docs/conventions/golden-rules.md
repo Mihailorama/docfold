@@ -21,8 +21,8 @@ These rules are absolute. AI agents must follow them without exception.
 - **Workflow:** See `CLAUDE.md` -> "Feature Development Workflow (TDD)" and `docs/tasks/_TEMPLATE.md`
 
 ### Rule: Deliver through a pull request
-- **What:** Push a feature branch and open a GitHub pull request with green tests. Never push directly to `main` or a `v*` tag; releases go through `tag-release.yml`.
-- **Why:** A `v*` tag publishes to PyPI, and untested code on `main` can reach a broken release. The owner corrected the earlier "never push" wording on 2026-11-01: docfold must be on GitHub.
+- **What:** Push a feature branch and open a GitHub pull request with green tests; agents may merge it once checks pass. Never push directly to `main`. Never create a `v*` tag or run `tag-release.yml` without the owner's explicit approval: a release is the owner's decision.
+- **Why:** A `v*` tag publishes to PyPI, and untested code on `main` can reach a broken release. The owner corrected the earlier "never push" wording on 2026-11-01: docfold must be on GitHub. On 2026-11-04 the owner confirmed that agent PRs and merges are normal and that only releases need approval.
 
 ### Rule: Preserve backward compatibility
 - **What:** Never remove or rename public API functions/classes without a deprecation period.

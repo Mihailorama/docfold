@@ -1,6 +1,6 @@
 """docfold - Turn any document into structured data."""
 
-__version__ = "0.8.0"
+__version__ = "0.8.1"
 
 from docfold.engines.base import (
     BoundingBox,

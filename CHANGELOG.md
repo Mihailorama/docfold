@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-11-04
+
+### Changed
+
+- CI: macOS tests run as a separate job that no longer gates the PyPI publish. v0.8.0 was tagged but never published because hosted macOS runners were not acquired; 0.8.1 has the same package contents.
+
 ## [0.8.0] - 2026-11-04
 
 ### Added

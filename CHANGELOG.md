@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Document splitting** (`docfold.split`): one PDF holding several documents → page range and type per document. `split_document(path, types, classifiers)` runs page classifiers in order: `TextPageClassifier` (titles followed by a number sign and OKUD form codes from the text layer, no model; abstains on scans) and `LLMPageClassifier` (text pages 30 per call, scanned pages one image per call; `models` is an ordered cross-provider fallback chain, HTTP 429 retried before moving on; `acompletion` injectable). Failures return the file as one document. `cut_pages(path, "5-7")` rewrites a PDF to a page range deterministically. New extras `[split]`, `[split-llm]` (DOCFOLD-9).
+
 ## [0.8.1] - 2026-11-04
 
 ### Changed

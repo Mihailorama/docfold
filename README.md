@@ -240,6 +240,30 @@ They're not competitors — **they're engines inside docfold.** Docling, Unstruc
 
 If you love one parser, pin it: `engine_hint="docling"`. If you don't want to choose, don't: `router.process(file)` picks for you.
 
+## Splitting a File into Documents
+
+One PDF or scan often holds several documents (an invoice, an act and a UPD; four
+acceptance acts and a cost certificate). `docfold.split` returns each document's page
+range and type, so you can extract them one by one. Page classifiers run in order and may
+abstain: `TextPageClassifier` reads titles and form codes from the text layer with no
+model; `LLMPageClassifier` asks a chat model (scans go one page image per call) and takes
+an ordered fallback chain of LiteLLM models.
+
+```python
+from docfold.split import LLMPageClassifier, TextPageClassifier, cut_pages, split_document
+
+result = await split_document("merged.pdf", ["Invoice", "Act", "UPD"], [
+    TextPageClassifier(),
+    LLMPageClassifier(models=["anthropic/claude-haiku-5-5", "gemini/gemini-3.8-flash"]),
+])
+result.to_dict()
+# {"pages": 15, "method": "llm", "documents": [{"type": "Invoice", "start": 1, "end": 1, "pages": "1-1"}, ...]}
+cut_pages("merged_copy.pdf", "3-4")  # rewrite a copy to one document's pages
+```
+
+Install: `pip install "docfold[split-llm]"` (or `[split]` and pass your own `acompletion=`).
+A failing classifier never raises: the file comes back as one document (`method="fallback"`).
+
 ## Batch Processing
 
 Process hundreds of documents with bounded concurrency and progress tracking:

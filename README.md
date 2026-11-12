@@ -424,6 +424,22 @@ text = strip_base64_images(result.content)
 A fallback is accepted when it passes the gate and has more text than earlier
 attempts; if none passes, the attempt with the most text is returned.
 
+### Layout from a second engine
+
+`supplement_engine` keeps the winning text and adds another engine's layout
+(typed block bounding boxes, image captions, page images, `marker_json`):
+
+```python
+result = await router.process(
+    "report.pdf", engine_hint="pymupdf", supplement_engine="marker",
+)
+result.bounding_boxes   # from marker; result.content is still pymupdf's text
+```
+
+It runs only when the supplement did not produce the primary result and
+supports the file type; a failure is recorded in `fallback_chain`
+(`role="bbox_supplement"`) and does not fail the call.
+
 ## Adding a Custom Engine
 
 Implement the `DocumentEngine` interface:

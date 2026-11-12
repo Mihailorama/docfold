@@ -104,3 +104,58 @@ def split_answer(raw: str, names: list[str]) -> dict[str, str]:
         end = found[i + 1][0] if i + 1 < len(found) else len(raw)
         out[name] = raw[pos + len(name) + 2:end].strip().lstrip(":").strip()
     return out
+
+
+CORRECTION_PROMPT = (
+    "The text below was produced by OCR and may contain recognition errors. Fix OCR "
+    "errors only (misread characters, broken words, wrong line joins); keep the wording, "
+    "numbers that are clearly legible, order and Markdown structure. Do not translate, "
+    "summarize or add content.{image_hint}\nContext: {context}\n\nOCR TEXT:\n{text}\n\n"
+    "Return only the corrected text."
+)
+
+
+async def correct_ocr_text(
+    text: str,
+    models: Sequence[str | dict[str, Any]],
+    *,
+    acompletion: Completion | None = None,
+    image_b64: str | None = None,
+    image_mime: str = "image/jpeg",
+    context: str = "",
+    max_tokens: int = 16_000,
+) -> str:
+    """Fix OCR errors in *text* with an LLM; returns *text* unchanged when every model fails.
+
+    Pass the page image (*image_b64*) so the model can check unclear characters.
+    *models* is an ordered fallback chain; *acompletion* defaults to
+    ``litellm.acompletion``.
+    """
+    if not models:
+        raise ValueError("correct_ocr_text needs at least one model")
+    if not text.strip():
+        return text
+    if acompletion is None:
+        from litellm import acompletion as _litellm
+
+        acompletion = _litellm
+    hint = " The page image is attached; use it to resolve unclear characters." if image_b64 else ""
+    prompt = (CORRECTION_PROMPT.replace("{image_hint}", hint)
+              .replace("{context}", context or "none").replace("{text}", text))
+    content: Any = prompt
+    if image_b64:
+        content = [{"type": "text", "text": prompt},
+                   {"type": "image_url",
+                    "image_url": {"url": f"data:{image_mime};base64,{image_b64}"}}]
+    for entry in models:
+        kwargs = {"model": entry} if isinstance(entry, str) else dict(entry)
+        try:
+            response = await acompletion(messages=[{"role": "user", "content": content}],
+                                         temperature=0, max_tokens=max_tokens, **kwargs)
+            fixed = (response.choices[0].message.content or "").strip()
+        except Exception as exc:  # noqa: BLE001 - any provider error moves on
+            logger.warning("correct_ocr_text: %s failed: %s", kwargs.get("model"), str(exc)[:200])
+            continue
+        if fixed:
+            return fixed
+    return text

@@ -144,6 +144,10 @@ firecrawl = [
 markitdown = [
     "markitdown[all]>=0.0.1",
 ]
+# PDF tables with page + bbox (stream flavor; lattice also needs Ghostscript)
+camelot = [
+    "camelot-py>=1.0",
+]
 # xlsx/xlsm with sheet + cell coordinates (csv/tsv need nothing extra)
 spreadsheet = [
     "openpyxl>=3.1",

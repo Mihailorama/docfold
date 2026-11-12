@@ -440,6 +440,25 @@ text = strip_base64_images(result.content)
 A fallback is accepted when it passes the gate and has more text than earlier
 attempts; if none passes, the attempt with the most text is returned.
 
+### Retry chain by script
+
+`fallback_engines` can be a callable evaluated only when the primary attempt
+fails. `ScriptRouting` picks the chain by the document's script (text layer
+first, Tesseract OSD on page 1 for scans):
+
+```python
+from docfold.utils.script import ScriptRouting
+
+routing = ScriptRouting(
+    rules={"arabic": ["marker"]},                 # RTL breaks docling
+    default=["docling", "docling_serve", "marker"],
+    max_pages={"docling_serve": 5},               # drop slow backends for long docs
+)
+result = await router.process("scan.pdf", engine_hint="pymupdf",
+                              quality_gate=default_quality_gate, fallback_engines=routing)
+result.fallback_chain[0]["script_hint"]          # "arabic", "cjk", "cyrillic", "latin", "unknown"
+```
+
 ### Layout from a second engine
 
 `supplement_engine` keeps the winning text and adds another engine's layout

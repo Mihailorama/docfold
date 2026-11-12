@@ -148,6 +148,19 @@ markitdown = [
 camelot = [
     "camelot-py>=1.0",
 ]
+# Image deskew before OCR
+deskew = [
+    "Pillow>=10.0",
+    "numpy>=1.23",
+]
+# TrOCR line OCR (model from Hugging Face on first use)
+trocr = [
+    "transformers>=4.40",
+    "torch>=2.0",
+    "Pillow>=10.0",
+    "numpy>=1.23",
+    "PyMuPDF>=1.23",
+]
 # xlsx/xlsm with sheet + cell coordinates (csv/tsv need nothing extra)
 spreadsheet = [
     "openpyxl>=3.1",
@@ -171,6 +184,7 @@ test = [
     "PyMuPDF>=1.23",       # tests/test_split.py, tests/test_render.py
     "openpyxl>=3.1",       # tests/engines/test_spreadsheet_engine.py
     "Pillow>=10.0",        # tests/test_render.py (webp, fast jpeg)
+    "numpy>=1.23",         # tests/test_ocr_extras.py (deskew, line split)
     "requests>=2.31",      # mypy checks marker_engine against the real API
     "types-requests",
     "pytest>=7.0",

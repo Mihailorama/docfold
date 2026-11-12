@@ -99,9 +99,9 @@ _EXTENSION_PRIORITY: dict[str, list[str]] = {
     # --- eBooks ---
     "epub": ["unstructured", "marker", "markitdown"],
     # --- Audio (transcription) ---
-    "mp3": ["markitdown"],
-    "wav": ["markitdown"],
-    "m4a": ["markitdown"],
+    "mp3": ["markitdown", "whisper"],
+    "wav": ["markitdown", "whisper"],
+    "m4a": ["markitdown", "whisper"],
     # --- Archives ---
     "zip": ["markitdown"],
 }

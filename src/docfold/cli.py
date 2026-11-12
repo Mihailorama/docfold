@@ -277,6 +277,11 @@ def _build_router():
     except Exception:
         pass
     try:
+        from docfold.engines.remote_marker_engine import RemoteMarkerEngine
+        router.register(RemoteMarkerEngine())
+    except Exception:
+        pass
+    try:
         from docfold.engines.spreadsheet_engine import SpreadsheetEngine
         router.register(SpreadsheetEngine())
     except Exception:

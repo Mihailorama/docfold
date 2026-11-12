@@ -270,6 +270,7 @@ class EngineRouter:
         *,
         quality_gate: QualityGate | None = None,
         fallback_engines: list[str] | None = None,
+        supplement_engine: str | None = None,
         **kwargs: Any,
     ) -> EngineResult:
         """Select an engine and process the document.
@@ -288,9 +289,33 @@ class EngineRouter:
             fallback_engines: Explicit retry order after the primary engine
                 (the hinted one, or the first by priority). Enables fallback
                 even with ``engine_hint``.
+            supplement_engine: Engine run after the primary result is chosen
+                (unless it produced it) to add layout: its ``bounding_boxes``,
+                ``images`` and ``metadata`` are merged into the result, the
+                primary text is kept. Failures never fail the call.
 
         Every attempt is recorded in ``result.fallback_chain``.
         """
+        result = await self._process_chain(
+            file_path, output_format, engine_hint,
+            quality_gate=quality_gate, fallback_engines=fallback_engines, **kwargs,
+        )
+        if supplement_engine and supplement_engine != result.engine_name:
+            result = await self._supplement(
+                result, supplement_engine, file_path, output_format, **kwargs
+            )
+        return result
+
+    async def _process_chain(
+        self,
+        file_path: str,
+        output_format: OutputFormat,
+        engine_hint: str | None,
+        *,
+        quality_gate: QualityGate | None,
+        fallback_engines: list[str] | None,
+        **kwargs: Any,
+    ) -> EngineResult:
         ext = Path(file_path).suffix.lstrip(".").lower()
         chain: list[dict[str, Any]] = []
         names: list[str]
@@ -368,6 +393,49 @@ class EngineRouter:
         raise RuntimeError(
             f"All engines failed for '{file_path}'. Errors: {err_summary}"
         )
+
+    async def _supplement(
+        self,
+        result: EngineResult,
+        name: str,
+        file_path: str,
+        output_format: OutputFormat,
+        **kwargs: Any,
+    ) -> EngineResult:
+        """Run *name* and graft its layout onto *result* (DOCFOLD-13)."""
+        attempt: dict[str, Any] = {
+            "engine": name, "chars": 0, "confidence": None, "processing_time_ms": 0,
+            "selected": False, "role": "bbox_supplement",
+        }
+        chain = result.fallback_chain if result.fallback_chain is not None else []
+        chain.append(attempt)
+        result.fallback_chain = chain
+        engine = self._engines.get(name)
+        ext = Path(file_path).suffix.lstrip(".").lower()
+        if engine is None or not engine.is_available():
+            attempt["skip_reason"] = "engine_unavailable"
+            return result
+        if ext and ext not in engine.supported_extensions:
+            attempt["skip_reason"] = "unsupported_extension"
+            return result
+        try:
+            sup = await engine.process(file_path, output_format=output_format, **kwargs)
+        except Exception as exc:
+            logger.warning("Supplement engine '%s' failed on '%s': %s", name, file_path, exc)
+            attempt["error"] = str(exc)
+            return result
+        attempt.update(
+            engine=sup.engine_name or name,
+            chars=len(strip_base64_images(sup.content or "").strip()),
+            confidence=sup.confidence,
+            processing_time_ms=sup.processing_time_ms,
+        )
+        if sup.bounding_boxes:
+            result.bounding_boxes = sup.bounding_boxes
+            result.images = sup.images or result.images
+            result.tables = result.tables or sup.tables
+            result.metadata = {**(result.metadata or {}), **(sup.metadata or {})}
+        return result
 
     def _candidates(self, ext: str) -> list[DocumentEngine]:
         """Available engines for *ext*: priority chain first, then the rest."""

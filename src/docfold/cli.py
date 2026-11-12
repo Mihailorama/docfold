@@ -282,6 +282,11 @@ def _build_router():
     except Exception:
         pass
     try:
+        from docfold.engines.whisper_engine import WhisperEngine
+        router.register(WhisperEngine())
+    except Exception:
+        pass
+    try:
         from docfold.engines.spreadsheet_engine import SpreadsheetEngine
         router.register(SpreadsheetEngine())
     except Exception:

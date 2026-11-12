@@ -167,6 +167,8 @@ test = [
     "PyMuPDF>=1.23",       # tests/test_split.py, tests/test_render.py
     "openpyxl>=3.1",       # tests/engines/test_spreadsheet_engine.py
     "Pillow>=10.0",        # tests/test_render.py (webp, fast jpeg)
+    "requests>=2.31",      # mypy checks marker_engine against the real API
+    "types-requests",
     "pytest>=7.0",
     "pytest-asyncio>=0.21",
     "pytest-cov>=4.0",

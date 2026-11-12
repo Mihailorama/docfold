@@ -1012,7 +1012,7 @@ class TestDoclingServeEngine:
                 assert result.engine_name == "docling_serve"
                 assert result.format == OutputFormat.HTML
                 assert result.pages == 2
-                assert result.processing_time_ms > 0
+                assert result.processing_time_ms >= 0  # mocked call can finish within 1 ms
 
                 call_args = mock_post.call_args
                 assert "/v1/convert/file" in call_args[0][0]

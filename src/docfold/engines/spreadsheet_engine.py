@@ -11,8 +11,10 @@ from __future__ import annotations
 
 import asyncio
 import csv
+import html
 import io
 import json
+import re
 import time
 from collections.abc import Iterable, Sequence
 from pathlib import Path
@@ -63,6 +65,77 @@ def _records(rows: list[Sequence[Any]]) -> list[dict[str, Any]]:
     return [dict(zip(header, row)) for row in rows[1:]]
 
 
+def read_sheets(file_path: str) -> list[tuple[str, list[Sequence[Any]]]]:
+    """``[(sheet_name, rows)]`` of a workbook, cell values (cached formula results)."""
+    import openpyxl
+
+    wb = openpyxl.load_workbook(file_path, read_only=True, data_only=True)
+    try:
+        return [(ws.title, list(ws.iter_rows(values_only=True))) for ws in wb.worksheets]
+    finally:
+        wb.close()
+
+
+def workbook_to_csv(file_path: str) -> dict[str, str]:
+    """``{sheet_name: csv_text}`` for every sheet of a workbook."""
+    out: dict[str, str] = {}
+    for name, rows in read_sheets(file_path):
+        buf = io.StringIO()
+        csv.writer(buf, lineterminator="\n").writerows(
+            ["" if v is None else v for v in row] for row in rows
+        )
+        out[name] = buf.getvalue()
+    return out
+
+
+def split_workbook(file_path: str, out_dir: str) -> list[str]:
+    """Write each sheet to its own ``<out_dir>/<sheet>.xlsx`` (values only); return the paths.
+
+    Characters that are unsafe in file names are replaced with ``_``; duplicate
+    names get a numeric suffix.
+    """
+    import openpyxl
+
+    paths: list[str] = []
+    used: set[str] = set()
+    Path(out_dir).mkdir(parents=True, exist_ok=True)
+    for name, rows in read_sheets(file_path):
+        stem = re.sub(r'[\\/:*?"<>|\x00-\x1f]', "_", name).strip(" .") or "sheet"
+        base, n = stem, 2
+        while stem.lower() in used:
+            stem, n = f"{base}_{n}", n + 1
+        used.add(stem.lower())
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = name[:31]
+        for row in rows:
+            ws.append(list(row))
+        path = str(Path(out_dir) / f"{stem}.xlsx")
+        wb.save(path)
+        paths.append(path)
+    return paths
+
+
+def _html(sheets: list[tuple[str, list[Sequence[Any]]]]) -> str:
+    """One ``<table>`` per sheet (``<h2>`` name first when several); http(s) values become links."""
+    parts = []
+    for name, rows in sheets:
+        if len(sheets) > 1:
+            parts.append(f"<h2>{html.escape(name)}</h2>")
+        body = []
+        for row in rows:
+            cells = []
+            for v in row:
+                text = "" if v is None else str(v)
+                cell = html.escape(text)
+                if text.startswith(("http://", "https://")):
+                    cell = f'<a href="{html.escape(text, quote=True)}">{cell}</a>'
+                cells.append(f"<td>{cell}</td>")
+            body.append("<tr>" + "".join(cells) + "</tr>")
+        parts.append("<table>" + "".join(body) + "</table>")
+    return "\n".join(parts)
+
+
 class SpreadsheetEngine(DocumentEngine):
     """xlsx / xlsm / csv / tsv reader that keeps sheet + cell provenance.
 
@@ -70,6 +143,7 @@ class SpreadsheetEngine(DocumentEngine):
 
     - ``JSON``: records. CSV/TSV -> ``[{header: value}]``; workbooks ->
       ``{sheet: [{header: value}]}`` (first non-empty row is the header).
+    - ``HTML``: one ``<table>`` per sheet, links kept clickable.
     - anything else: workbooks -> TSV per sheet (``Sheet: <name>`` line before
       each sheet when there are several), ``format=TEXT``; CSV/TSV -> the file
       text unchanged.
@@ -116,15 +190,7 @@ class SpreadsheetEngine(DocumentEngine):
             delimiter = "\t" if ext == "tsv" else _sniff(text)
             sheets = [(path.stem, list(csv.reader(io.StringIO(text), delimiter=delimiter)))]
         else:
-            import openpyxl
-
-            wb = openpyxl.load_workbook(file_path, read_only=True, data_only=True)
-            try:
-                sheets = [
-                    (ws.title, list(ws.iter_rows(values_only=True))) for ws in wb.worksheets
-                ]
-            finally:
-                wb.close()
+            sheets = read_sheets(file_path)
 
         cell_map, truncated = self._cell_map(sheets)
         if output_format == OutputFormat.JSON:
@@ -134,6 +200,8 @@ class SpreadsheetEngine(DocumentEngine):
                 payload = {name: _records(rows) for name, rows in sheets}
             content = json.dumps(payload, ensure_ascii=False, indent=2, default=str)
             fmt = OutputFormat.JSON
+        elif output_format == OutputFormat.HTML:
+            content, fmt = _html(sheets), OutputFormat.HTML
         elif ext in _TEXT_EXTENSIONS:
             content, fmt = text, OutputFormat.TEXT
         else:

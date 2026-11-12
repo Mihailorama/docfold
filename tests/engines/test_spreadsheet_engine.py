@@ -99,3 +99,36 @@ async def test_cell_map_cap(tmp_path, monkeypatch):
 def test_available_and_extensions(engine):
     assert engine.is_available()
     assert {"xlsx", "csv", "tsv"} <= engine.supported_extensions
+
+
+# ---------------------------------------------------------------------------
+# DOCFOLD-23: per-sheet split, CSV and HTML
+# ---------------------------------------------------------------------------
+
+from docfold.engines.spreadsheet_engine import split_workbook, workbook_to_csv  # noqa: E402
+
+
+def test_split_workbook(tmp_path):
+    path = _xlsx(tmp_path / "b.xlsx", {"A<B>": [["a", 1]], "Data": [["x"], [2]], "A>B<": [[3]]})
+    out = split_workbook(path, str(tmp_path / "out"))
+    assert [p.rsplit("/", 1)[-1] for p in out] == ["A_B_.xlsx", "Data.xlsx", "A_B__2.xlsx"]
+    wb = openpyxl.load_workbook(out[1])
+    assert wb.sheetnames == ["Data"] and [r for r in wb.active.iter_rows(values_only=True)] == [
+        ("x",), (2,),
+    ]
+
+
+def test_workbook_to_csv(tmp_path):
+    path = _xlsx(tmp_path / "c.xlsx", {"S": [["name", "note"], ["A, Inc.", None]]})
+    assert workbook_to_csv(path) == {"S": 'name,note\n"A, Inc.",\n'}
+
+
+async def test_html_output(engine, tmp_path):
+    path = _xlsx(tmp_path / "h.xlsx", {
+        "One": [["site", "x<y"], ["https://example.com/a?b=1&c=2", None]], "Two": [[1]],
+    })
+    res = await engine.process(path, output_format=OutputFormat.HTML)
+    assert res.format == OutputFormat.HTML
+    assert "<h2>One</h2>" in res.content and "<h2>Two</h2>" in res.content
+    assert "<td>x&lt;y</td>" in res.content
+    assert '<a href="https://example.com/a?b=1&amp;c=2">' in res.content

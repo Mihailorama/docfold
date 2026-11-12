@@ -53,8 +53,9 @@ _EXTENSION_PRIORITY: dict[str, list[str]] = {
     "ppt":  ["docling", "marker", "unstructured", "llamaparse", "liteparse", "azure_docint"],
     "xlsx": [
         "docling", "marker", "unstructured", "llamaparse",
-        "liteparse", "azure_docint", "markitdown",
+        "liteparse", "azure_docint", "markitdown", "spreadsheet",
     ],
+    "xlsm": ["spreadsheet"],
     "xls":  [
         "docling", "marker", "unstructured", "llamaparse",
         "liteparse", "azure_docint", "markitdown",
@@ -68,8 +69,8 @@ _EXTENSION_PRIORITY: dict[str, list[str]] = {
     "xml":  ["firecrawl", "unstructured", "markitdown"],
     "md":   ["unstructured", "markitdown"],
     "rst":  ["unstructured"],
-    "csv":  ["unstructured", "markitdown"],
-    "tsv":  ["unstructured", "markitdown"],
+    "csv":  ["unstructured", "markitdown", "spreadsheet"],
+    "tsv":  ["unstructured", "markitdown", "spreadsheet"],
     "txt":  ["unstructured", "markitdown"],
     "rtf":  ["unstructured"],
     "json": ["markitdown"],

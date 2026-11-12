@@ -139,6 +139,10 @@ firecrawl = [
 markitdown = [
     "markitdown[all]>=0.0.1",
 ]
+# xlsx/xlsm with sheet + cell coordinates (csv/tsv need nothing extra)
+spreadsheet = [
+    "openpyxl>=3.1",
+]
 mcp = [
     "mcp>=1.2",
 ]
@@ -150,12 +154,13 @@ evaluation = [
     "psutil>=5.9",         # Memory measurement
 ]
 all = [
-    "docfold[docling,mineru,marker,pymupdf,paddleocr,tesseract,easyocr,unstructured,llamaparse,liteparse,opendataloader,mistral-ocr,textract,google-docai,azure-docint,nougat,chandra,surya,unlimited-ocr,firecrawl,markitdown,mcp,evaluation]",
+    "docfold[docling,mineru,marker,pymupdf,paddleocr,tesseract,easyocr,unstructured,llamaparse,liteparse,opendataloader,mistral-ocr,textract,google-docai,azure-docint,nougat,chandra,surya,unlimited-ocr,firecrawl,markitdown,spreadsheet,mcp,evaluation]",
     # Note: zerox excluded from [all] — py-zerox requires Python 3.11+
     # Install separately: pip install docfold[zerox]
 ]
 test = [
     "PyMuPDF>=1.23",       # tests/test_split.py
+    "openpyxl>=3.1",       # tests/engines/test_spreadsheet_engine.py
     "pytest>=7.0",
     "pytest-asyncio>=0.21",
     "pytest-cov>=4.0",

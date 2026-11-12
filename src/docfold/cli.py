@@ -276,6 +276,11 @@ def _build_router():
         router.register(MarkItDownEngine())
     except Exception:
         pass
+    try:
+        from docfold.engines.spreadsheet_engine import SpreadsheetEngine
+        router.register(SpreadsheetEngine())
+    except Exception:
+        pass
 
     return router
 

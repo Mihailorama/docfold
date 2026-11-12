@@ -172,7 +172,7 @@ class ChandraEngine(DocumentEngine):
             images = []
             for page in doc:
                 pix = page.get_pixmap(dpi=300)
-                img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
                 images.append(img)
             doc.close()
             return images

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 
@@ -111,7 +112,7 @@ from docfold.engines.spreadsheet_engine import split_workbook, workbook_to_csv  
 def test_split_workbook(tmp_path):
     path = _xlsx(tmp_path / "b.xlsx", {"A<B>": [["a", 1]], "Data": [["x"], [2]], "A>B<": [[3]]})
     out = split_workbook(path, str(tmp_path / "out"))
-    assert [p.rsplit("/", 1)[-1] for p in out] == ["A_B_.xlsx", "Data.xlsx", "A_B__2.xlsx"]
+    assert [Path(p).name for p in out] == ["A_B_.xlsx", "Data.xlsx", "A_B__2.xlsx"]
     wb = openpyxl.load_workbook(out[1])
     assert wb.sheetnames == ["Data"] and [r for r in wb.active.iter_rows(values_only=True)] == [
         ("x",), (2,),

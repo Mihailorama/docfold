@@ -265,6 +265,22 @@ cut_pages("merged_copy.pdf", "3-4")  # rewrite a copy to one document's pages
 Install: `pip install "docfold[split-llm]"` (or `[split]` and pass your own `acompletion=`).
 A failing classifier never raises: the file comes back as one document (`method="fallback"`).
 
+## Page Images
+
+`render_pages` yields one page image at a time (PDF, images, and office files
+through LibreOffice), for vision models or for showing the source next to
+bounding boxes:
+
+```python
+import base64
+from docfold.render import render_pages   # pip install docfold[render]
+
+for page, data in render_pages("report.pdf", "1-3,7", dpi=150, image_format="jpeg", quality=80):
+    b64 = base64.b64encode(data).decode()
+```
+
+`image_format` is `png`, `jpeg` or `webp`; only the requested pages are rendered.
+
 ## Batch Processing
 
 Process hundreds of documents with bounded concurrency and progress tracking:

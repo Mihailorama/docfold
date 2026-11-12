@@ -52,6 +52,11 @@ pymupdf = [
 split = [
     "PyMuPDF>=1.23",
 ]
+# docfold.render: page images (Pillow: webp, fast jpeg)
+render = [
+    "PyMuPDF>=1.23",
+    "Pillow>=10.0",
+]
 split-llm = [
     "PyMuPDF>=1.23",
     "litellm>=1.40",  # default LLMPageClassifier call; pass acompletion= to skip
@@ -159,8 +164,9 @@ all = [
     # Install separately: pip install docfold[zerox]
 ]
 test = [
-    "PyMuPDF>=1.23",       # tests/test_split.py
+    "PyMuPDF>=1.23",       # tests/test_split.py, tests/test_render.py
     "openpyxl>=3.1",       # tests/engines/test_spreadsheet_engine.py
+    "Pillow>=10.0",        # tests/test_render.py (webp, fast jpeg)
     "pytest>=7.0",
     "pytest-asyncio>=0.21",
     "pytest-cov>=4.0",

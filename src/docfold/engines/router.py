@@ -19,6 +19,16 @@ logger = logging.getLogger(__name__)
 QualityGate = Callable[[EngineResult, str], "str | None"]
 """``gate(result, file_path)`` returns a rejection reason, or ``None`` to accept."""
 
+FallbackPlan = Callable[
+    ["EngineResult | None", str], "list[str] | tuple[list[str], dict[str, Any]]"
+]
+"""``plan(primary_result_or_None, file_path)`` -> engines, or ``(engines, info)``.
+
+Called only when the primary attempt fails; ``info`` is merged into the
+primary ``fallback_chain`` record (e.g. ``script_hint``). See
+:class:`docfold.utils.script.ScriptRouting`.
+"""
+
 # ---------------------------------------------------------------------------
 # Extension-aware priority map
 # ---------------------------------------------------------------------------
@@ -269,7 +279,7 @@ class EngineRouter:
         engine_hint: str | None = None,
         *,
         quality_gate: QualityGate | None = None,
-        fallback_engines: list[str] | None = None,
+        fallback_engines: list[str] | FallbackPlan | None = None,
         supplement_engine: str | None = None,
         **kwargs: Any,
     ) -> EngineResult:
@@ -288,7 +298,8 @@ class EngineRouter:
                 :func:`docfold.utils.quality.default_quality_gate`.
             fallback_engines: Explicit retry order after the primary engine
                 (the hinted one, or the first by priority). Enables fallback
-                even with ``engine_hint``.
+                even with ``engine_hint``. May be a :data:`FallbackPlan`
+                callable, evaluated only when the primary attempt fails.
             supplement_engine: Engine run after the primary result is chosen
                 (unless it produced it) to add layout: its ``bounding_boxes``,
                 ``images`` and ``metadata`` are merged into the result, the
@@ -313,17 +324,23 @@ class EngineRouter:
         engine_hint: str | None,
         *,
         quality_gate: QualityGate | None,
-        fallback_engines: list[str] | None,
+        fallback_engines: list[str] | FallbackPlan | None,
         **kwargs: Any,
     ) -> EngineResult:
         ext = Path(file_path).suffix.lstrip(".").lower()
         chain: list[dict[str, Any]] = []
         names: list[str]
+        plan: FallbackPlan | None = None
+        static: list[str] | None = None
+        if callable(fallback_engines):
+            plan = fallback_engines
+        else:
+            static = fallback_engines
 
         if engine_hint:
             # Validates the hint (raises on unknown / unavailable engines).
             self.select(file_path, engine_hint=engine_hint, **kwargs)
-            names = [engine_hint, *(fallback_engines or [])]
+            names = [engine_hint, *(static or [])]
         else:
             candidates = self._candidates(ext)
             if not candidates:
@@ -332,7 +349,7 @@ class EngineRouter:
                     f"Registered: {list(self._engines.keys())}"
                 )
             names = (
-                [candidates[0].name, *fallback_engines]
+                [candidates[0].name, *(static or [])]
                 if fallback_engines is not None
                 else [e.name for e in candidates]
             )
@@ -341,10 +358,25 @@ class EngineRouter:
         best_attempt: dict[str, Any] | None = None
         best_chars = -1
         errors: list[tuple[str, Exception]] = []
-        for i, name in enumerate(dict.fromkeys(names)):
+        tried: set[str] = set()
+        primary_result: EngineResult | None = None
+        planned = plan is None
+        while names or not planned:
+            if not names and plan is not None:
+                # Primary failed: ask the plan for the retry chain once.
+                planned = True
+                out = plan(primary_result, file_path)
+                engines, info = out if isinstance(out, tuple) else (out, {})
+                chain[0].update(info)
+                names = list(engines)
+                continue
+            name = names.pop(0)
+            if name in tried:
+                continue
+            tried.add(name)
             attempt: dict[str, Any] = {
                 "engine": name, "chars": 0, "confidence": None, "processing_time_ms": 0,
-                "selected": False, "role": "primary" if i == 0 else "fallback",
+                "selected": False, "role": "fallback" if chain else "primary",
             }
             chain.append(attempt)
             engine = self._engines.get(name)
@@ -364,6 +396,8 @@ class EngineRouter:
                 errors.append((name, exc))
                 continue
 
+            if len(chain) == 1:
+                primary_result = result
             chars = len(strip_base64_images(result.content or "").strip())
             attempt.update(
                 engine=result.engine_name or name,

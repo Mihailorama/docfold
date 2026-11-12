@@ -113,6 +113,7 @@ for name, res in results.items():
 | [**Unlimited-OCR**](https://github.com/baidu/Unlimited-OCR) | Local/VLM | MIT | PDF, images | Required | `pip install docfold[unlimited-ocr]` |
 | **OCR VLMs via vLLM/SGLang** — `xiaomi_ocr`, `hunyuan_ocr`, `lighton_ocr`, `ovis_ocr2`, `dots_ocr` | Self-hosted VLM | Per model | PDF, images | On the server | none (`[pymupdf]` for PDFs) |
 | [**MarkItDown**](https://github.com/microsoft/markitdown) | Local | MIT | PDF, Office, HTML, images, CSV/JSON/XML, ePub, audio, ZIP | No | `pip install docfold[markitdown]` |
+| **Spreadsheet** (openpyxl) — sheet names + `Sheet!A1` cell map, JSON records | Local | MIT | XLSX, XLSM, CSV, TSV | No | `pip install docfold[spreadsheet]` |
 
 ### Open OCR VLMs served over an OpenAI-compatible API
 

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Quality-gated fallback**: `EngineRouter.process(quality_gate=..., fallback_engines=[...])` retries on poor output, not only on exceptions, and accepts a fallback when it passes the gate with more text than earlier attempts. `docfold.utils.default_quality_gate` checks chars per page, base64 image ratio, confidence, gibberish and image-only pages under a text layer; `strip_base64_images` / `base64_ratio` helpers. Every result from `EngineRouter.process` carries `fallback_chain`, one record per attempt (`engine`, `chars`, `confidence`, `processing_time_ms`, `selected`, `role`, `skip_reason` / `error`) (DOCFOLD-11).
+
 ## [0.9.0] - 2026-11-11
 
 ### Added

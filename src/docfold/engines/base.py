@@ -133,6 +133,16 @@ class EngineResult:
     processing_time_ms: int = 0
     """Wall-clock processing time in milliseconds."""
 
+    fallback_chain: list[dict[str, Any]] | None = None
+    """Every engine attempt made by :meth:`EngineRouter.process`, in order.
+
+    Each entry has ``engine``, ``chars`` (text length without inline base64
+    images), ``confidence``, ``processing_time_ms``, ``selected`` and ``role``
+    (``primary`` / ``fallback`` / ``bbox_supplement``), plus ``skip_reason``
+    (quality gate or ``engine_unavailable``) or ``error`` when it applies.
+    ``None`` when the engine was called directly.
+    """
+
 
 class DocumentEngine(ABC):
     """Abstract base class that every engine adapter must implement."""

@@ -1,8 +1,8 @@
 """Quality assessment utilities for EngineResult.
 
-This is a **standalone utility** — NOT wired into ``EngineRouter.process()``.
-Consumers call ``quality_ok(result)`` after getting an :class:`EngineResult`
-and decide what to do.
+``quality_ok`` is a standalone check. To let the router retry on poor output,
+pass ``quality_gate=default_quality_gate`` (or your own gate) to
+``EngineRouter.process()``.
 
 Example::
 
@@ -16,8 +16,10 @@ Example::
 from __future__ import annotations
 
 import os
+import re
 import unicodedata
 from dataclasses import dataclass
+from pathlib import Path
 
 from docfold.engines.base import EngineResult
 
@@ -133,3 +135,101 @@ def _is_box_or_block(ch: str) -> bool:
     # Block Elements: U+2580–U+259F
     # Geometric Shapes: U+25A0–U+25FF (includes ☐, ▒, ▓, etc.)
     return 0x2500 <= cp <= 0x25FF
+
+
+# ---------------------------------------------------------------------------
+# Base64 page images and the default quality gate (DOCFOLD-11)
+# ---------------------------------------------------------------------------
+
+_BASE64_IMG_RE = re.compile(
+    r"<(?:figure|img)[^>]*src\s*=\s*[\"']data:image/[^\"']+[\"'][^>]*/?>(?:</(?:figure|img)>)?",
+    re.IGNORECASE | re.DOTALL,
+)
+
+_PAGED_EXTENSIONS = {"pdf", "png", "jpg", "jpeg", "tif", "tiff", "bmp", "webp", "gif"}
+_TEXT_LAYER_ENGINES = {"pymupdf"}
+MIN_CHARS_PER_PAGE = 200
+MAX_BASE64_RATIO = 0.9
+
+
+def strip_base64_images(text: str) -> str:
+    """Remove inline base64 ``<img>`` / ``<figure>`` tags.
+
+    Some engines embed page images as base64 in HTML output instead of (or
+    next to) the extracted text. They add no readable text.
+    """
+    return _BASE64_IMG_RE.sub("", text)
+
+
+def base64_ratio(text: str) -> float:
+    """Share of *text* taken by inline base64 images, in ``[0, 1]``."""
+    if not text:
+        return 0.0
+    return 1.0 - len(strip_base64_images(text)) / len(text)
+
+
+def _image_page_reason(file_path: str) -> str | None:
+    """Flag PDFs whose text layer misses image content (scans, image tables)."""
+    try:
+        import pymupdf
+    except ImportError:
+        return None
+    image_only = large_image = 0
+    try:
+        with pymupdf.open(file_path) as doc:
+            for page in doc:
+                images = page.get_images()
+                if not images:
+                    continue
+                text_len = len(page.get_text().strip())
+                if text_len < MIN_CHARS_PER_PAGE:
+                    image_only += 1
+                area = page.rect.width * page.rect.height
+                img_area = sum(
+                    abs(i["bbox"][2] - i["bbox"][0]) * abs(i["bbox"][3] - i["bbox"][1])
+                    for i in page.get_image_info()
+                )
+                if area > 0 and img_area > 0.25 * area and text_len < 500:
+                    large_image += 1
+    except Exception:
+        return None
+    if image_only:
+        return f"image_only_pages ({image_only} pages with images but <{MIN_CHARS_PER_PAGE} chars)"
+    if large_image:
+        return f"large_image_pages ({large_image} pages with >25% image area and <500 chars)"
+    return None
+
+
+def default_quality_gate(result: EngineResult, file_path: str) -> str | None:
+    """Default gate for :meth:`EngineRouter.process`; returns a rejection reason or ``None``.
+
+    Rejects when:
+
+    1. more than 90% of the content is inline base64 images;
+    2. PDFs/images: fewer than 200 real characters per page;
+    3. :func:`quality_ok` fails (confidence below threshold, gibberish);
+    4. a text-layer engine (``pymupdf``) read a PDF that has image-only pages
+       or pages mostly covered by images (needs pymupdf installed).
+    """
+    content = result.content or ""
+    ratio = base64_ratio(content)
+    if ratio >= MAX_BASE64_RATIO:
+        return f"base64_ratio ({ratio:.0%} of content is inline images)"
+    real = strip_base64_images(content).strip()
+    ext = Path(file_path).suffix.lstrip(".").lower()
+    if ext in _PAGED_EXTENSIONS:
+        pages = max(result.pages or 1, 1)
+        if len(real) < pages * MIN_CHARS_PER_PAGE:
+            return (
+                f"low_avg_chars ({len(real)} chars / {pages} pages"
+                f" = {len(real) // pages} < {MIN_CHARS_PER_PAGE})"
+            )
+    stripped = EngineResult(
+        content=real, format=result.format, engine_name=result.engine_name,
+        confidence=result.confidence,
+    )
+    if not quality_ok(stripped):
+        return f"quality (confidence={result.confidence}, gibberish={gibberish_ratio(real):.2f})"
+    if ext == "pdf" and result.engine_name in _TEXT_LAYER_ENGINES:
+        return _image_page_reason(file_path)
+    return None

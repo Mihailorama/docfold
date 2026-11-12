@@ -317,6 +317,7 @@ class EngineResult:
     bounding_boxes: list | None  # Layout element positions
     confidence: float | None  # Overall confidence [0-1]
     processing_time_ms: int   # Wall-clock time
+    fallback_chain: list | None  # Every router attempt (engine, chars, selected, role, ...)
 ```
 
 ## Evaluation Framework
@@ -398,6 +399,29 @@ router = EngineRouter(engines, fallback_order=["pymupdf", "docling", "marker"])
 # CLI: --engines flag
 # docfold convert invoice.pdf --engines docling,pymupdf
 ```
+
+### Fallback on poor output
+
+By default the router moves on only when an engine raises. Pass a quality gate to
+also retry when the output is poor (too little text per page, low confidence,
+gibberish, mostly base64 page images, or a text layer that misses scanned pages):
+
+```python
+from docfold.utils import default_quality_gate, strip_base64_images
+
+result = await router.process(
+    "scan.pdf",
+    engine_hint="pymupdf",                        # fast text layer first
+    quality_gate=default_quality_gate,            # or gate(result, path) -> reason | None
+    fallback_engines=["docling", "marker"],       # retry order
+)
+for attempt in result.fallback_chain:
+    print(attempt["engine"], attempt["chars"], attempt["selected"], attempt.get("skip_reason"))
+text = strip_base64_images(result.content)
+```
+
+A fallback is accepted when it passes the gate and has more text than earlier
+attempts; if none passes, the attempt with the most text is returned.
 
 ## Adding a Custom Engine
 

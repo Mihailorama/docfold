@@ -287,6 +287,11 @@ def _build_router():
     except Exception:
         pass
     try:
+        from docfold.engines.camelot_engine import CamelotEngine
+        router.register(CamelotEngine())
+    except Exception:
+        pass
+    try:
         from docfold.engines.spreadsheet_engine import SpreadsheetEngine
         router.register(SpreadsheetEngine())
     except Exception:

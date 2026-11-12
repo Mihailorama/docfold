@@ -21,6 +21,7 @@ import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -197,3 +198,82 @@ def _detect_language(text: str) -> str | None:
         return None
     except Exception:
         return None
+
+
+# ---------------------------------------------------------------------------
+# Per-page classification and PDF metadata (DOCFOLD-22)
+# ---------------------------------------------------------------------------
+
+
+def classify_pages(file_path: str) -> list[str]:
+    """Classify each PDF page as ``text``, ``image``, ``mixed`` or ``empty``.
+
+    Based on text and image block areas (PyMuPDF ``get_text("blocks")``), so a
+    scanned annex inside a digital PDF shows up page by page.
+    """
+    import pymupdf
+
+    kinds: list[str] = []
+    with pymupdf.open(file_path) as doc:
+        for page in doc:
+            text_area = image_area = 0.0
+            flags = pymupdf.TEXTFLAGS_BLOCKS | pymupdf.TEXT_PRESERVE_IMAGES
+            for block in page.get_text("blocks", flags=flags):
+                area = abs(pymupdf.Rect(block[:4]))
+                if block[6] == 1:
+                    image_area += area
+                elif str(block[4]).strip():
+                    text_area += area
+            if text_area and image_area:
+                kinds.append("mixed")
+            elif text_area:
+                kinds.append("text")
+            elif image_area:
+                kinds.append("image")
+            else:
+                kinds.append("empty")
+    return kinds
+
+
+def pdf_metadata(file_path: str, sample_pages: int = 5) -> dict[str, Any]:
+    """Document facts for a PDF: encryption, info fields, content seen on the first pages.
+
+    ``is_scanned`` is ``True`` when the sampled pages have images and no text,
+    ``False`` for text without images, ``None`` for mixed or empty content.
+    Encrypted files report only ``page_count`` / ``encrypted`` / ``needs_password``.
+    """
+    import pymupdf
+
+    with pymupdf.open(file_path) as doc:
+        info = doc.metadata or {}
+        meta: dict[str, Any] = {
+            "page_count": doc.page_count,
+            "encrypted": bool(doc.is_encrypted or doc.needs_pass),
+            "needs_password": bool(doc.needs_pass),
+            "title": info.get("title") or None,
+            "author": info.get("author") or None,
+            "creator": info.get("creator") or None,
+            "producer": info.get("producer") or None,
+            "creation_date": info.get("creationDate") or None,
+        }
+        types: set[str] = set()
+        if not doc.needs_pass:
+            for page in list(doc)[:sample_pages]:
+                if page.get_text().strip():
+                    types.add("text")
+                if page.get_images():
+                    types.add("images")
+                if page.find_tables().tables:
+                    types.add("tables")
+                if next(page.widgets(), None) is not None:
+                    types.add("forms")
+                if next(page.annots(), None) is not None:
+                    types.add("annotations")
+    meta["content_types"] = sorted(types)
+    meta["has_forms"] = "forms" in types
+    meta["has_annotations"] = "annotations" in types
+    has_text, has_images = "text" in types, "images" in types
+    meta["is_scanned"] = True if has_images and not has_text else (
+        False if has_text and not has_images else None
+    )
+    return meta

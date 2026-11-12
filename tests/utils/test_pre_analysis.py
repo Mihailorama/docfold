@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from docfold.utils.pre_analysis import FileAnalysis, _analyze_sync, pre_analyze
 
 
@@ -295,3 +297,58 @@ class TestPreAnalyzeAsync:
         assert result.category == "image"
         assert result.extension == "png"
         assert isinstance(result, FileAnalysis)
+
+
+# ---------------------------------------------------------------------------
+# DOCFOLD-22: per-page classification and PDF metadata
+# ---------------------------------------------------------------------------
+
+
+def _image_page(doc, pymupdf, with_text=False):
+    page = doc.new_page()
+    pix = pymupdf.Pixmap(pymupdf.csRGB, pymupdf.IRect(0, 0, 60, 60), 0)
+    pix.clear_with(120)
+    page.insert_image(pymupdf.Rect(50, 200, 300, 450), pixmap=pix)
+    if with_text:
+        page.insert_text((72, 72), "Caption text")
+    return page
+
+
+def test_classify_pages(tmp_path):
+    pymupdf = pytest.importorskip("pymupdf")
+    from docfold.utils.pre_analysis import classify_pages
+
+    doc = pymupdf.open()
+    doc.new_page().insert_text((72, 72), "Digital text")
+    _image_page(doc, pymupdf)
+    _image_page(doc, pymupdf, with_text=True)
+    doc.new_page()
+    path = tmp_path / "mixed.pdf"
+    doc.save(path)
+    doc.close()
+    assert classify_pages(str(path)) == ["text", "image", "mixed", "empty"]
+
+
+def test_pdf_metadata(tmp_path):
+    pymupdf = pytest.importorskip("pymupdf")
+    from docfold.utils.pre_analysis import pdf_metadata
+
+    doc = pymupdf.open()
+    page = doc.new_page()
+    page.insert_text((72, 72), "Form below")
+    widget = pymupdf.Widget()
+    widget.field_name, widget.field_type = "name", pymupdf.PDF_WIDGET_TYPE_TEXT
+    widget.rect = pymupdf.Rect(72, 100, 200, 120)
+    page.add_widget(widget)
+    doc.set_metadata({"title": "Sample", "author": "Jane"})
+    path = tmp_path / "form.pdf"
+    doc.save(path)
+    doc.save(tmp_path / "locked.pdf", encryption=pymupdf.PDF_ENCRYPT_AES_256,
+             user_pw="u", owner_pw="o")
+    doc.close()
+    meta = pdf_metadata(str(path))
+    assert meta["page_count"] == 1 and meta["title"] == "Sample" and meta["author"] == "Jane"
+    assert meta["has_forms"] is True and "forms" in meta["content_types"]
+    assert meta["is_scanned"] is False and meta["encrypted"] is False
+    locked = pdf_metadata(str(tmp_path / "locked.pdf"))
+    assert locked["encrypted"] is True and locked["needs_password"] is True

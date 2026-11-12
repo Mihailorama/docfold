@@ -24,7 +24,7 @@ import os
 import re
 import time
 import urllib.request
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -204,7 +204,10 @@ class VLMOCREngine(DocumentEngine):
         max_tokens: int | None = None,
         dpi: int = 200,
         timeout: float = 600,
+        acompletion: Callable[..., Awaitable[Any]] | None = None,
     ) -> None:
+        """``acompletion``: optional async LLM caller (LiteLLM-style). When set,
+        pages go through it instead of the HTTP client and no base URL is needed."""
         if preset not in PRESETS:
             raise ValueError(f"Unknown preset '{preset}'. Choose one of: {sorted(PRESETS)}")
         p = self._spec = PRESETS[preset]
@@ -217,6 +220,7 @@ class VLMOCREngine(DocumentEngine):
         self._max_tokens = max_tokens
         self._dpi = dpi
         self._timeout = timeout
+        self._acompletion = acompletion
 
     @property
     def name(self) -> str:
@@ -231,7 +235,7 @@ class VLMOCREngine(DocumentEngine):
         return EngineCapabilities(table_structure=True, heading_detection=True, reading_order=True)
 
     def is_available(self) -> bool:
-        return bool(self._base_url)
+        return bool(self._base_url) or self._acompletion is not None
 
     async def process(
         self,
@@ -242,22 +246,37 @@ class VLMOCREngine(DocumentEngine):
         import asyncio
 
         start = time.perf_counter()
-        pages = await asyncio.get_running_loop().run_in_executor(None, self._do_process, file_path)
+        model = kwargs.get("model") or self._model
+        if self._acompletion is not None:
+            images = await asyncio.get_running_loop().run_in_executor(
+                None, _page_images, file_path, self._dpi
+            )
+            pages = []
+            for img, mime in images:
+                payload = self._payload(img, mime, model)
+                response = await self._acompletion(**payload)
+                pages.append(self._finish(response.choices[0].message.content or ""))
+        else:
+            pages = await asyncio.get_running_loop().run_in_executor(
+                None, self._do_process, file_path, model
+            )
         return EngineResult(
             content=_format_output(pages, output_format),
             format=output_format,
             engine_name=self.name,
             pages=len(pages),
             processing_time_ms=int((time.perf_counter() - start) * 1000),
-            metadata={"model": self._model, "base_url": self._base_url},
+            metadata={"model": model, "base_url": self._base_url},
         )
 
     # ponytail: pages go out sequentially; fan out with a thread pool if a
     # server with batching makes that worth it.
-    def _do_process(self, file_path: str) -> list[str]:
-        return [self._ocr_page(img, mime) for img, mime in _page_images(file_path, self._dpi)]
+    def _do_process(self, file_path: str, model: str) -> list[str]:
+        return [
+            self._ocr_page(img, mime, model) for img, mime in _page_images(file_path, self._dpi)
+        ]
 
-    def _ocr_page(self, image: bytes, mime: str) -> str:
+    def _payload(self, image: bytes, mime: str, model: str) -> dict[str, Any]:
         parts: list[dict[str, Any]] = [{
             "type": "image_url",
             "image_url": {"url": f"data:image/{mime};base64,{base64.b64encode(image).decode()}"},
@@ -268,16 +287,23 @@ class VLMOCREngine(DocumentEngine):
         if self._spec.system is not None:
             messages.append({"role": "system", "content": self._spec.system})
         messages.append({"role": "user", "content": parts})
-        payload: dict[str, Any] = {"model": self._model, "messages": messages, "temperature": 0}
+        payload: dict[str, Any] = {"model": model, "messages": messages, "temperature": 0}
         payload.update(self._spec.params)
         if self._max_tokens:
             payload["max_tokens"] = self._max_tokens
+        return payload
+
+    def _finish(self, reply: str) -> str:
+        text = _strip_fence(reply)
+        return self._spec.postprocess(text) if self._spec.postprocess else text
+
+    def _ocr_page(self, image: bytes, mime: str, model: str) -> str:
+        payload = self._payload(image, mime, model)
         headers = {"Content-Type": "application/json"}
         if self._api_key:
             headers["Authorization"] = f"Bearer {self._api_key}"
         data = self._post(f"{self._base_url}/chat/completions", payload, headers)
-        text = _strip_fence(data["choices"][0]["message"]["content"] or "")
-        return self._spec.postprocess(text) if self._spec.postprocess else text
+        return self._finish(data["choices"][0]["message"]["content"] or "")
 
     def _post(self, url: str, payload: dict, headers: dict) -> dict:
         req = urllib.request.Request(url, json.dumps(payload).encode(), headers)

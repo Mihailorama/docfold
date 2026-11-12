@@ -12,8 +12,12 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from docfold.engines.base import DocumentEngine, EngineResult, OutputFormat
+from docfold.utils.quality import strip_base64_images
 
 logger = logging.getLogger(__name__)
+
+QualityGate = Callable[[EngineResult, str], "str | None"]
+"""``gate(result, file_path)`` returns a rejection reason, or ``None`` to accept."""
 
 # ---------------------------------------------------------------------------
 # Extension-aware priority map
@@ -262,6 +266,9 @@ class EngineRouter:
         file_path: str,
         output_format: OutputFormat = OutputFormat.MARKDOWN,
         engine_hint: str | None = None,
+        *,
+        quality_gate: QualityGate | None = None,
+        fallback_engines: list[str] | None = None,
         **kwargs: Any,
     ) -> EngineResult:
         """Select an engine and process the document.
@@ -269,51 +276,108 @@ class EngineRouter:
         If the selected engine fails and no explicit ``engine_hint`` was
         given, the router automatically tries the remaining engines from the
         priority chain before raising an error.
+
+        Args:
+            quality_gate: ``gate(result, file_path) -> reason | None``. A
+                result with a reason is rejected and the next engine runs; a
+                later result is accepted when it passes the gate and has more
+                real text than every earlier attempt. If no attempt passes,
+                the one with the most real text is returned. See
+                :func:`docfold.utils.quality.default_quality_gate`.
+            fallback_engines: Explicit retry order after the primary engine
+                (the hinted one, or the first by priority). Enables fallback
+                even with ``engine_hint``.
+
+        Every attempt is recorded in ``result.fallback_chain``.
         """
-        # When an explicit hint is given, fail immediately — no fallback.
-        if engine_hint:
-            engine = self.select(file_path, engine_hint=engine_hint, **kwargs)
-            logger.info("Processing '%s' with engine '%s' (explicit)", file_path, engine.name)
-            return await engine.process(file_path, output_format=output_format, **kwargs)
-
-        # Build ordered candidate list
         ext = Path(file_path).suffix.lstrip(".").lower()
-        candidates: list[DocumentEngine] = []
-        seen: set[str] = set()
-        for name in self._get_priority(ext):
-            eng = self._engines.get(name)
-            if eng and eng.name not in seen and self._is_candidate(eng, ext):
-                candidates.append(eng)
-                seen.add(eng.name)
-        # Also include any registered engine not already in the list
-        for eng in self._engines.values():
-            if eng.name not in seen and self._is_candidate(eng, ext):
-                candidates.append(eng)
-                seen.add(eng.name)
+        chain: list[dict[str, Any]] = []
+        names: list[str]
 
-        if not candidates:
-            raise ValueError(
-                f"No available engine supports '.{ext}'. "
-                f"Registered: {list(self._engines.keys())}"
+        if engine_hint:
+            # Validates the hint (raises on unknown / unavailable engines).
+            self.select(file_path, engine_hint=engine_hint, **kwargs)
+            names = [engine_hint, *(fallback_engines or [])]
+        else:
+            candidates = self._candidates(ext)
+            if not candidates:
+                raise ValueError(
+                    f"No available engine supports '.{ext}'. "
+                    f"Registered: {list(self._engines.keys())}"
+                )
+            names = (
+                [candidates[0].name, *fallback_engines]
+                if fallback_engines is not None
+                else [e.name for e in candidates]
             )
 
+        best: EngineResult | None = None
+        best_attempt: dict[str, Any] | None = None
+        best_chars = -1
         errors: list[tuple[str, Exception]] = []
-        for engine in candidates:
+        for i, name in enumerate(dict.fromkeys(names)):
+            attempt: dict[str, Any] = {
+                "engine": name, "chars": 0, "confidence": None, "processing_time_ms": 0,
+                "selected": False, "role": "primary" if i == 0 else "fallback",
+            }
+            chain.append(attempt)
+            engine = self._engines.get(name)
+            if engine is None or not engine.is_available():
+                attempt["skip_reason"] = "engine_unavailable"
+                continue
             try:
-                logger.info("Processing '%s' with engine '%s'", file_path, engine.name)
-                return await engine.process(file_path, output_format=output_format, **kwargs)
+                logger.info("Processing '%s' with engine '%s'", file_path, name)
+                result = await engine.process(file_path, output_format=output_format, **kwargs)
             except Exception as exc:
+                if engine_hint and not fallback_engines:
+                    raise  # explicit hint, no fallback requested: unchanged behaviour
                 logger.warning(
-                    "Engine '%s' failed on '%s': %s — trying next engine",
-                    engine.name, file_path, exc,
+                    "Engine '%s' failed on '%s': %s — trying next engine", name, file_path, exc,
                 )
-                errors.append((engine.name, exc))
+                attempt["error"] = str(exc)
+                errors.append((name, exc))
+                continue
 
-        # All candidates exhausted
+            chars = len(strip_base64_images(result.content or "").strip())
+            attempt.update(
+                engine=result.engine_name or name,
+                chars=chars,
+                confidence=result.confidence,
+                processing_time_ms=result.processing_time_ms,
+            )
+            reason = quality_gate(result, file_path) if quality_gate else None
+            if reason:
+                logger.info("Engine '%s' rejected by quality gate: %s", name, reason)
+                attempt["skip_reason"] = reason
+            elif chars > best_chars or best is None:
+                attempt["selected"] = True
+                if best_attempt is not None:
+                    best_attempt["selected"] = False
+                result.fallback_chain = chain
+                return result
+            if chars > best_chars:
+                best, best_attempt, best_chars = result, attempt, chars
+
+        if best is not None and best_attempt is not None:
+            best_attempt["selected"] = True
+            best.fallback_chain = chain
+            return best
+
         err_summary = "; ".join(f"{name}: {exc}" for name, exc in errors)
         raise RuntimeError(
             f"All engines failed for '{file_path}'. Errors: {err_summary}"
         )
+
+    def _candidates(self, ext: str) -> list[DocumentEngine]:
+        """Available engines for *ext*: priority chain first, then the rest."""
+        candidates: list[DocumentEngine] = []
+        seen: set[str] = set()
+        for name in [*self._get_priority(ext), *self._engines]:
+            eng = self._engines.get(name)
+            if eng and eng.name not in seen and self._is_candidate(eng, ext):
+                candidates.append(eng)
+                seen.add(eng.name)
+        return candidates
 
     # ------------------------------------------------------------------
     # Batch processing

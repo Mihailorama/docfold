@@ -191,3 +191,83 @@ class TestGibberishRatio:
         bad = "\x00" * 20  # 20 control chars
         ratio = gibberish_ratio(normal + bad)
         assert abs(ratio - 0.2) < 0.01
+
+
+# ---------------------------------------------------------------------------
+# DOCFOLD-11: base64 helpers and the default quality gate
+# ---------------------------------------------------------------------------
+
+from docfold.utils.quality import (  # noqa: E402
+    base64_ratio,
+    default_quality_gate,
+    strip_base64_images,
+)
+
+_IMG = '<img src="data:image/png;base64,' + "A" * 2000 + '" alt="p1"/>'
+
+
+class TestBase64Helpers:
+    def test_strip(self):
+        fig = "<figure src='data:image/jpeg;base64,xx'></figure>"
+        assert strip_base64_images(f"<p>hi</p>{_IMG}{fig}") == "<p>hi</p>"
+
+    def test_regular_img_kept(self):
+        html = '<img src="page1.png"/>'
+        assert strip_base64_images(html) == html
+
+    def test_ratio(self):
+        assert base64_ratio("") == 0.0
+        assert base64_ratio("plain") == 0.0
+        assert base64_ratio(_IMG) == 1.0
+
+
+def _gate_result(content, engine="docling", pages=1, confidence=None):
+    return EngineResult(
+        content=content, format=OutputFormat.HTML, engine_name=engine,
+        pages=pages, confidence=confidence,
+    )
+
+
+class TestDefaultQualityGate:
+    def test_low_chars_per_page(self, tmp_path):
+        reason = default_quality_gate(_gate_result("a" * 300, pages=2), str(tmp_path / "x.pdf"))
+        assert reason and reason.startswith("low_avg_chars")
+
+    def test_enough_text_passes(self, tmp_path):
+        assert default_quality_gate(_gate_result("word " * 100), str(tmp_path / "x.pdf")) is None
+
+    def test_mostly_base64_rejected(self, tmp_path):
+        content = "word " * 50 + _IMG * 10
+        reason = default_quality_gate(_gate_result(content), str(tmp_path / "x.pdf"))
+        assert reason and reason.startswith("base64_ratio")
+
+    def test_low_confidence_rejected(self, tmp_path):
+        reason = default_quality_gate(
+            _gate_result("word " * 100, confidence=0.2), str(tmp_path / "x.pdf")
+        )
+        assert reason and reason.startswith("quality")
+
+    def test_non_pdf_skips_page_density(self, tmp_path):
+        memo = _gate_result("short memo, sixty characters of text here, fine fine.")
+        assert default_quality_gate(memo, str(tmp_path / "m.docx")) is None
+
+    def test_image_only_page_on_text_layer_engine(self, tmp_path):
+        import pytest
+
+        pymupdf = pytest.importorskip("pymupdf")
+        path = tmp_path / "mixed.pdf"
+        doc = pymupdf.open()
+        page = doc.new_page()
+        page.insert_text((72, 72), "Digital page. " * 40)
+        page2 = doc.new_page()
+        pix = pymupdf.Pixmap(pymupdf.csRGB, pymupdf.IRect(0, 0, 400, 400), 0)
+        pix.clear_with(200)
+        page2.insert_image(page2.rect, pixmap=pix)
+        doc.save(path)
+        doc.close()
+        text = "Digital page. " * 40
+        res = _gate_result(text, engine="pymupdf", pages=1)
+        reason = default_quality_gate(res, str(path))
+        assert reason and reason.startswith("image_only_pages")
+        # Same text from an OCR engine is judged on its output only.
+        assert default_quality_gate(_gate_result(text, pages=1), str(path)) is None

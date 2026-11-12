@@ -46,7 +46,7 @@ _EXTENSION_PRIORITY: dict[str, list[str]] = {
     # --- PDF ---
     "pdf": [
         "docling", "mineru", "chandra", "unlimited_ocr", "unstructured", "marker",
-        "llamaparse", "liteparse", "mistral_ocr", "firecrawl", "google_docai",
+        "modal_marker", "llamaparse", "liteparse", "mistral_ocr", "firecrawl", "google_docai",
         "azure_docint", "textract", "zerox", "nougat", "surya", "pymupdf",
         "paddleocr", "tesseract", "easyocr", "markitdown",
     ],

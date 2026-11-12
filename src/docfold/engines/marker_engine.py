@@ -195,7 +195,7 @@ class MarkerEngine(DocumentEngine):
         }
         requested_fmt = fmt_map[output_format]
 
-        headers = {"X-Api-Key": self._api_key}
+        headers = {"X-Api-Key": self._api_key or ""}
 
         with open(file_path, "rb") as f:
             import mimetypes

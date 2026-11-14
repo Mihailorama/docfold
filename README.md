@@ -264,6 +264,7 @@ cut_pages("merged_copy.pdf", "3-4")  # rewrite a copy to one document's pages
 
 Install: `pip install "docfold[split-llm]"` (or `[split]` and pass your own `acompletion=`).
 A failing classifier never raises: the file comes back as one document (`method="fallback"`).
+Input that is not a PDF (checked by magic bytes, not extension) raises `ValueError` naming the detected type, in `split_document` and `cut_pages`.
 
 ## Page Images
 

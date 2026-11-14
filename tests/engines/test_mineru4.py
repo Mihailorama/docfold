@@ -64,3 +64,19 @@ def test_page_range():
     assert _page_range(0, None) == ""
     assert _page_range(4, None) == "5-r1"
     assert _page_range(None, 2) == "1-3"
+
+
+def test_mineru4_parse_found_in_mineru_parser(monkeypatch):
+    """MinerU 4.0.0-4.0.2 export ``parse`` only from ``mineru.parser`` (DOCFOLD-2)."""
+    import sys
+    from types import ModuleType
+
+    from docfold.engines.mineru_engine import _load_mineru4
+
+    parser, config = ModuleType("mineru.parser"), ModuleType("mineru.config")
+    parser.parse = MagicMock(name="parse")
+    config.VlmConfig = MagicMock(name="VlmConfig")
+    for name, mod in {"mineru": ModuleType("mineru"), "mineru.parser": parser,
+                      "mineru.config": config}.items():
+        monkeypatch.setitem(sys.modules, name, mod)
+    assert _load_mineru4() == (parser.parse, config.VlmConfig)

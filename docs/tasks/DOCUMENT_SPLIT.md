@@ -7,7 +7,7 @@ created: "2026-11-10"
 
 # Feature: document splitting (page classification)
 
-Plane: DOCFOLD-9.
+Plane: DOCFOLD-9; non-PDF input guard: DOCFOLD-25.
 
 ## Problem
 People upload one PDF or scan that holds several documents: four acceptance acts, a
@@ -34,10 +34,15 @@ Callers need each document's page range and type before extraction.
     hands the call to the next one. `acompletion` can be injected (a caller's own LLM
     gateway); by default it is `litellm.acompletion`.
 - A failed classifier never fails the caller: the file comes back as one untyped
-  document (`method="fallback"`, `error`). Single pages, non-PDFs, no types → `single`;
-  more than `max_pages` → `too_long`; scans with no vision model → `no_vision`.
+  document (`method="fallback"`, `error`). Single pages, no types, unreadable files →
+  `single`; more than `max_pages` → `too_long`; scans with no vision model → `no_vision`.
 - `cut_pages(path, "5-7")` rewrites a PDF in place to a page range, deterministically
   (same input, same bytes), so an OCR cache keyed by file hash is reused.
+- Non-PDF input (no `%PDF-` in the first 1024 bytes; the extension is ignored) raises
+  `ValueError` naming the detected type (PNG, JPEG, ZIP/docx, ...) in both functions,
+  before PyMuPDF opens it (DOCFOLD-25). Before 0.10.0, PyMuPDF opened images and text
+  as documents (`split_document` said `single`, `cut_pages` overwrote an image with a
+  PDF) or failed deep inside on the rest.
 
 ## Affected Files
 - `src/docfold/split.py` - new module
@@ -51,6 +56,7 @@ Callers need each document's page range and type before extraction.
 - [x] heuristic: text-layer PDF split without a model; abstains on scans; chain falls through to LLM
 - [x] single page / no types / failures read the file whole
 - [x] `cut_pages` keeps the range and is deterministic
+- [x] non-PDF input (PNG, JPEG, ZIP, text, empty; named `.pdf`) raises `ValueError` with the type, before `pymupdf.open`, file untouched; a PDF header after leading bytes still passes
 - [x] E2E: 26-page scan of nine construction documents → nine exact ranges (Claude Haiku 5.5)
 
 ## Edge Cases

@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-11-14
+
 ### Added
 
 - **Jina Reader engine** (`jina`): PDF to Markdown / HTML / text through `r.jina.ai`; key from the constructor, `JINA_API_KEY` or `JINAAI_API_KEY`; title and token usage in metadata (DOCFOLD-19).
@@ -24,8 +26,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Spreadsheet engine** (`spreadsheet`, extra `[spreadsheet]`): xlsx/xlsm via openpyxl, csv/tsv via the csv module. Text output is TSV per sheet (`Sheet: <name>` header when several); `metadata["cell_map"]` maps every non-empty cell to `sheet`, A1 `cell`, `tsv_row`, `tsv_col`, `value`; JSON output is records (`[{header: value}]` for CSV, `{sheet: [...]}` for workbooks). `csv_to_records(text)` helper. Added last in the xlsx/csv/tsv priority lists, so default routing is unchanged; pick it with `engine_hint="spreadsheet"` (DOCFOLD-15).
 - **Supplement merge**: `EngineRouter.process(supplement_engine="marker")` runs a second engine after the primary result is chosen and grafts its `bounding_boxes`, `images` and `metadata` (e.g. `marker_json`) onto the result while keeping the primary text. Recorded in `fallback_chain` with `role="bbox_supplement"`; failures never fail the call (DOCFOLD-13).
 
+### Changed
+
+- `docfold.split.split_document` and `cut_pages` reject input that is not a PDF with `ValueError` naming the detected type (PNG, JPEG, ZIP/docx, ...), checked by magic bytes (`%PDF-` in the first 1024 bytes), not by extension, before PyMuPDF opens the file. Before, `split_document` returned images and text as one document (`method="single"`) and `cut_pages` overwrote an image with a PDF or failed inside PyMuPDF. Missing or unreadable files still give `single` (DOCFOLD-25).
+
 ### Fixed
 
+- `mineru` engine on MinerU 4.0.0-4.0.2: those releases do not re-export `parse` as `mineru.parse`, so the engine fell back to the 2.x/3.x path and failed with `No module named 'mineru.cli.common'`. It now imports `mineru.parser.parse`, present in every 4.x release (DOCFOLD-2).
 - `MarkerEngine` request headers typed correctly; `requests` and `types-requests` are now in `[test]`, so CI type-checks the Marker client (before, mypy saw `requests` as missing and skipped it).
 
 ## [0.9.0] - 2026-11-11

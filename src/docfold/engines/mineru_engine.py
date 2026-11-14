@@ -5,7 +5,7 @@ Install: ``pip install docfold[mineru]``
 Built on `MinerU <https://github.com/opendatalab/MinerU>`_ (the ``mineru``
 package, formerly ``magic-pdf``).
 
-- MinerU 4.x: :func:`mineru.parse` with a quality ``tier``; its VLM model is
+- MinerU 4.x: :func:`mineru.parser.parse` with a quality ``tier``; its VLM model is
   MinerU2.5-Pro.  Point ``server_url`` at a ``mineru-openai-server`` / vLLM
   endpoint to run the VLM remotely.
 - MinerU 2.x/3.x: :func:`mineru.cli.common.do_parse` with a ``backend``.
@@ -46,10 +46,14 @@ def _ensure_imports() -> None:
 
 
 def _load_mineru4() -> tuple[Any, Any] | None:
-    """Return ``(mineru.parse, VlmConfig)`` on MinerU 4.x, else ``None``."""
+    """Return ``(parse, VlmConfig)`` on MinerU 4.x, else ``None``.
+
+    ``mineru.parser`` has ``parse`` in every 4.x release; 4.0.0-4.0.2 do not re-export it
+    as ``mineru.parse`` (DOCFOLD-2).
+    """
     try:
-        from mineru import parse
         from mineru.config import VlmConfig
+        from mineru.parser import parse
     except (ImportError, AttributeError):
         return None
     return parse, VlmConfig

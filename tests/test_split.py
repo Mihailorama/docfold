@@ -211,3 +211,36 @@ async def test_single_page_no_types_and_failures_read_the_file_whole(tmp_path):
                                       acompletion=broken)]
     assert (await ds.split_document(two, TYPES, text_only)).method == "no_vision"
     assert (await ds.split_document(two, TYPES, vl, max_pages=1)).method == "too_long"
+
+
+@pytest.mark.parametrize(
+    ("head", "kind"),
+    [
+        (b"\x89PNG\r\n\x1a\n" + b"\0" * 32, "PNG"),
+        (b"\xff\xd8\xff\xe0" + b"\0" * 32, "JPEG"),
+        (b"PK\x03\x04" + b"\0" * 32, "ZIP"),
+        (b"plain text, no header", "unknown"),
+        (b"", "empty"),
+    ],
+)
+async def test_non_pdf_input_is_rejected_before_pymupdf_opens_it(tmp_path, monkeypatch, head, kind):
+    # Named .pdf on purpose: detection is by magic bytes, not by extension.
+    path = tmp_path / "upload.pdf"
+    path.write_bytes(head)
+
+    def must_not_open(*args, **kwargs):
+        raise AssertionError("pymupdf.open called on a non-PDF")
+
+    monkeypatch.setattr(pymupdf, "open", must_not_open)
+    with pytest.raises(ValueError, match=f"not a PDF.*{kind}"):
+        ds.cut_pages(str(path), "1")
+    with pytest.raises(ValueError, match=f"not a PDF.*{kind}"):
+        await ds.split_document(str(path), TYPES, [])
+    assert path.read_bytes() == head
+
+
+async def test_pdf_header_after_leading_bytes_is_still_a_pdf(tmp_path):
+    src = _pdf(tmp_path / "a.pdf", ["one", "two"])
+    padded = tmp_path / "padded.bin"
+    padded.write_bytes(b"\r\n" + open(src, "rb").read())
+    assert ds.cut_pages(str(padded), "1") == 1

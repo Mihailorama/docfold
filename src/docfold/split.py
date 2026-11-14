@@ -100,14 +100,46 @@ def _page_ranges(spec: str, page_count: int) -> list[int]:
     return pages
 
 
+_MAGIC = (
+    (b"\x89PNG", "PNG image"),
+    (b"\xff\xd8\xff", "JPEG image"),
+    (b"GIF8", "GIF image"),
+    (b"II*\x00", "TIFF image"),
+    (b"MM\x00*", "TIFF image"),
+    (b"BM", "BMP image"),
+    (b"RIFF", "RIFF container (WebP/WAV/AVI)"),
+    (b"PK\x03\x04", "ZIP archive (docx/xlsx/pptx/odt)"),
+    (b"\xd0\xcf\x11\xe0", "OLE file (doc/xls/ppt)"),
+    (b"{\\rtf", "RTF document"),
+)
+
+
+def _require_pdf(file_path: str) -> None:
+    """Raise ``ValueError`` naming the detected type unless the file is a PDF.
+
+    Checked by magic bytes (``%PDF-`` in the first 1024 bytes, as readers allow), never by
+    extension: PyMuPDF opens images and text as documents and fails late on the rest.
+    """
+    with open(file_path, "rb") as fh:
+        head = fh.read(1024)
+    if b"%PDF-" in head:
+        return
+    kind = next((name for magic, name in _MAGIC if head.startswith(magic)), None)
+    if kind is None:
+        kind = f"unknown, starts with {head[:8]!r}" if head else "empty file"
+    raise ValueError(f"{file_path} is not a PDF (detected: {kind})")
+
+
 def cut_pages(file_path: str, spec: str) -> int:
     """Rewrite the PDF at *file_path* in place to the pages in *spec* (1-based, '5-7').
 
     Same input and range give the same bytes, so a cache keyed by file hash (e.g. OCR)
-    serves every reader of this document. Returns the kept page count.
+    serves every reader of this document. Returns the kept page count. Raises
+    ``ValueError`` if the file is not a PDF (by magic bytes).
     """
     import pymupdf
 
+    _require_pdf(file_path)
     with pymupdf.open(file_path) as doc:
         pages = _page_ranges(spec, doc.page_count)
         if not pages:
@@ -439,10 +471,16 @@ async def split_document(
     *classifiers* run in order; the first that labels the pages wins. A classifier is any
     object with ``name`` and ``async label(doc, types) -> {page: label}`` that raises
     ``Abstain`` to pass. Failures never raise: the file comes back as one untyped document.
+    The one exception is input that is not a PDF (by magic bytes): ``ValueError`` naming
+    the detected type.
     """
     import pymupdf
 
     types = [t for t in dict.fromkeys(str(t).strip() for t in document_types or []) if t]
+    try:
+        _require_pdf(file_path)
+    except OSError:  # unreadable files are read whole
+        return _single(1, "single")
     try:
         doc = pymupdf.open(file_path)
     except Exception:  # noqa: BLE001 (unreadable files are read whole)

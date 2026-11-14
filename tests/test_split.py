@@ -241,6 +241,14 @@ async def test_non_pdf_input_is_rejected_before_pymupdf_opens_it(tmp_path, monke
 
 async def test_pdf_header_after_leading_bytes_is_still_a_pdf(tmp_path):
     src = _pdf(tmp_path / "a.pdf", ["one", "two"])
-    padded = tmp_path / "padded.bin"
-    padded.write_bytes(b"\r\n" + open(src, "rb").read())
-    assert ds.cut_pages(str(padded), "1") == 1
+    for pad in (b"\r\n", b"\0" * 1023):  # readers allow the header to start in the first 1 KiB
+        padded = tmp_path / "padded.bin"
+        padded.write_bytes(pad + open(src, "rb").read())
+        assert ds.cut_pages(str(padded), "1") == 1
+
+
+async def test_text_starting_with_bm_is_not_called_a_bmp(tmp_path):
+    path = tmp_path / "notes.pdf"
+    path.write_bytes(b"BMW invoice, plain text")
+    with pytest.raises(ValueError, match="not a PDF.*unknown"):
+        ds.cut_pages(str(path), "1")

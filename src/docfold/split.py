@@ -106,7 +106,6 @@ _MAGIC = (
     (b"GIF8", "GIF image"),
     (b"II*\x00", "TIFF image"),
     (b"MM\x00*", "TIFF image"),
-    (b"BM", "BMP image"),
     (b"RIFF", "RIFF container (WebP/WAV/AVI)"),
     (b"PK\x03\x04", "ZIP archive (docx/xlsx/pptx/odt)"),
     (b"\xd0\xcf\x11\xe0", "OLE file (doc/xls/ppt)"),
@@ -121,7 +120,7 @@ def _require_pdf(file_path: str) -> None:
     extension: PyMuPDF opens images and text as documents and fails late on the rest.
     """
     with open(file_path, "rb") as fh:
-        head = fh.read(1024)
+        head = fh.read(1024 + len(b"%PDF-") - 1)  # a header may start at byte 1023
     if b"%PDF-" in head:
         return
     kind = next((name for magic, name in _MAGIC if head.startswith(magic)), None)

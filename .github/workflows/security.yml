@@ -31,10 +31,11 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      # One root osv-scanner.toml covers every lockfile.
+      # --no-resolve: scan exactly the versions the files pin (resolving ranges through deps.dev is slow
+      # and drifts day to day). One root osv-scanner.toml covers every lockfile.
       - run: |
           CFG=""; [ -f osv-scanner.toml ] && CFG="--config /src/osv-scanner.toml"
-          docker run --rm -v "$PWD:/src" ghcr.io/google/osv-scanner@sha256:4f3b7e2c64b9d38a5febc5a7e4a3dfef1d1362f726dea7a2ef4762b46469fcd0 scan source -r --allow-no-lockfiles $CFG /src
+          docker run --rm -v "$PWD:/src" ghcr.io/google/osv-scanner@sha256:4f3b7e2c64b9d38a5febc5a7e4a3dfef1d1362f726dea7a2ef4762b46469fcd0 scan source -r --allow-no-lockfiles --no-resolve $CFG /src
 
   static-analysis:
     runs-on: ubuntu-24.04

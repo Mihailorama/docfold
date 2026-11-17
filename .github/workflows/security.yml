@@ -1,0 +1,60 @@
+# Security baseline, SDLC-16. Canonical copy: AIAgentLbs/sdlc-orchestrator standards/security/github-security.yml.
+# The same four checks run in every factory repository (GitHub and GitLab); change them there first.
+# A PR is blocked by what it adds: new secrets, new static-analysis findings, any known-vulnerable
+# dependency or Dockerfile misconfiguration. Accepted exceptions live in osv-scanner.toml / .trivyignore
+# with a reason and a tracker link.
+name: Security baseline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  secrets:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      # Scan what this run adds: the PR's commits, or the pushed commits on main.
+      - env:
+          RANGE: ${{ github.event_name == 'pull_request' && format('{0}..{1}', github.event.pull_request.base.sha, github.event.pull_request.head.sha) || format('{0}..{1}', github.event.before, github.sha) }}
+        run: |
+          case "$RANGE" in 0000000000000000000000000000000000000000*) RANGE=-1;; esac
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f git /repo --redact --verbose --log-opts="$RANGE"
+
+  dependencies:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # One root osv-scanner.toml covers every lockfile.
+      - run: |
+          CFG=""; [ -f osv-scanner.toml ] && CFG="--config /src/osv-scanner.toml"
+          docker run --rm -v "$PWD:/src" ghcr.io/google/osv-scanner@sha256:4f3b7e2c64b9d38a5febc5a7e4a3dfef1d1362f726dea7a2ef4762b46469fcd0 scan source -r --allow-no-lockfiles $CFG /src
+
+  static-analysis:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      # Diff-aware: only findings the PR (or the push) introduces fail the job.
+      - env:
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          git config --global --add safe.directory "$PWD"
+          case "$BASE" in ''|0000000000000000000000000000000000000000) BASELINE="";; *) BASELINE="--baseline-commit $BASE";; esac
+          docker run --rm -v "$PWD:/src" -w /src semgrep/semgrep@sha256:4a34048c04fef049f71665047f074cffb00cc3d89482f965a5cd151d589237af \
+            sh -c "git config --global --add safe.directory /src && semgrep scan --config p/default --error --metrics off $BASELINE"
+
+  containers:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: |
+          if ! git ls-files | grep -qE '(^|/)Dockerfile[^/]*$'; then echo "no Dockerfile: nothing to scan"; exit 0; fi
+          docker run --rm -v "$PWD:/src" -w /src aquasec/trivy@sha256:2416d1f74045b57274df1a340eee6b510cacd73c66a6ccb8da092b117eb7d222 config --exit-code 1 --severity HIGH,CRITICAL .
